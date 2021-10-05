@@ -1,0 +1,6 @@
+aiohttp==3.7.4.post0
+discord==1.7.3
+psycopg2==2.9.1
+tweepy==3.10.0
+
+asyncio~=3.4.3
