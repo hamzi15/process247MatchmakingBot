@@ -3,7 +3,7 @@
   "token": "ODg1MjA1MzczNDYyNjQ2ODg0.YTjpvw.9rfaK1WUZ3z0G-_JlR6OGHTp83U",
   "message_id": 123456,
   "dict_lol_ids": {
-    "1313434": ["423423", "na1"],
-    "RIOT_API_KEY": "RGAPI-27a3bdb8-187b-4dc2-92ee-6f8fcb976f9c"
-  }
+    "1313434": ["423423", "na1"]
+  },
+  "lobby_number": 1
 }
