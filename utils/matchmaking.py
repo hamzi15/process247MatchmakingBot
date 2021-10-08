@@ -16,7 +16,6 @@ class MatchMaking:
     def __init__(self):
         self.dict_of_players = {}
 
-    @staticmethod
     def matchmaker(self, lst_of_player_memberObjs):
         red, blue = self.distribute_equally(lst_of_player_memberObjs)
         return (red, blue)
