@@ -49,8 +49,10 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             list_of_players = list()
             for i in range(10):
                 list_of_players.append(queue.pop())
-            red, blue = MatchMaking(
+            matchmakingObj = Matchmaking()
+            red, blue = matchmakingObj.matchmaker(
                 list_of_players)  # red_blue_team_looks_like_this = { 'role': 'discord_id', 'role2': 'discord_id2'}
+                                  #CURRENTLY red_blue_team_looks_like_this = { role': memberobj, 'role2': memberobj}
             red_channel, blue_channel, text_channel = create_channels(member.guild)
             for key in red:
                 await bot.get_user(red[key]).move_to(red_channel.id)
