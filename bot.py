@@ -3,10 +3,10 @@ import json
 import os
 import platform
 import sys
-from random import randint
+import random
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.ext.commands import Bot
 
 from utils.matchmaking import MatchMaking
@@ -23,10 +23,9 @@ intents.members = True
 bot = Bot(command_prefix=config["bot_prefix"], intents=intents)
 queue = Queue()  # Queue object initialization
 
-@client.event
+
+@bot.event
 async def on_ready():
-    if not fetch.is_running():
-        fetch.start()
     if not status_task.is_running():
         status_task.start()
     print('Logged in as ' + bot.user.name)
@@ -34,11 +33,13 @@ async def on_ready():
     print(f"Python version: {platform.python_version()}")
     print(f"Running on: {platform.system()} {platform.release()} ({os.name})")
 
+
 @tasks.loop(minutes=1.0)
-async def status_task():    # to set a game's status
+async def status_task():  # to set a game's status
     statuses = ["with you!", "with Riot API!", "with humans!"]
-    await bot.change_presence(activity=discord.Game(random.choice(statuses)))   
-    
+    await bot.change_presence(activity=discord.Game(random.choice(statuses)))
+
+
 async def add_to_spectator_channel(user: discord.Member):
     spectator_channel_id = config['spectator_channel_id']
     channel = bot.get_channel(spectator_channel_id).add_member(user)
@@ -56,10 +57,10 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             list_of_players = list()
             for i in range(10):
                 list_of_players.append(queue.pop())
-            matchmakingObj = Matchmaking()
+            matchmakingObj = MatchMaking()
             red, blue = matchmakingObj.matchmaker(
                 list_of_players)  # red_blue_team_looks_like_this = { 'role': 'discord_id', 'role2': 'discord_id2'}
-                                  #CURRENTLY red_blue_team_looks_like_this = { role': memberobj, 'role2': memberobj}
+            # CURRENTLY red_blue_team_looks_like_this = { role': memberobj, 'role2': memberobj}
             red_channel, blue_channel, text_channel = create_channels(member.guild)
             for key in red:
                 await bot.get_user(red[key]).move_to(red_channel.id)
@@ -70,7 +71,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 
 
 def get_embed(red, blue):
-    embed = discord.Embed(color=randint(0, 0xffff), description=f"**Teams and Roles**\n\n"
+    embed = discord.Embed(color=random.randint(0, 0xffff), description=f"**Teams and Roles**\n\n"
                                                                 f"**:red_circle: Red Side**\n"
                                                                 f"   Top     - <!@{red['top']}>\n"
                                                                 f"   Jungle  - <!@{red['jungle']}>\n"
@@ -89,7 +90,7 @@ def get_embed(red, blue):
 
 async def get_attention(no_of_members):
     channel = bot.get_channel(1234)  # id of the attention channel
-    embed = discord.Embed(color=randint(0, 0xffff),
+    embed = discord.Embed(color=random.randint(0, 0xffff),
                           description='            **ATTENTION**\n\nA new match has just started.\n')
     embed.add_field(name="Number of subs remaining in the lobby",
                     value=f"{no_of_members}\n")
