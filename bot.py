@@ -23,15 +23,22 @@ intents.members = True
 bot = Bot(command_prefix=config["bot_prefix"], intents=intents)
 queue = Queue()  # Queue object initialization
 
-
-@bot.event
+@client.event
 async def on_ready():
-    print(f"Logged in as {bot.user.name}")
+    if not fetch.is_running():
+        fetch.start()
+    if not status_task.is_running():
+        status_task.start()
+    print('Logged in as ' + bot.user.name)
     print(f"Discord.py API version: {discord.__version__}")
     print(f"Python version: {platform.python_version()}")
     print(f"Running on: {platform.system()} {platform.release()} ({os.name})")
 
-
+@tasks.loop(minutes=1.0)
+async def status_task():    # to set a game's status
+    statuses = ["with you!", "with Riot API!", "with humans!"]
+    await bot.change_presence(activity=discord.Game(random.choice(statuses)))   
+    
 async def add_to_spectator_channel(user: discord.Member):
     spectator_channel_id = config['spectator_channel_id']
     channel = bot.get_channel(spectator_channel_id).add_member(user)
