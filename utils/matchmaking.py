@@ -16,30 +16,19 @@ class MatchMaking:
     def __init__(self):
         self.dict_of_players = {}
 
-    def matchmaker(self, lst_of_player_memberObjs):
-        red, blue = self.distribute_equally(lst_of_player_memberObjs)
+    @staticmethod
+    def matchmaker(self, lst_of_player_memberObjs,lst_of_summonerID):
+        red, blue = self.distribute_equally(lst_of_player_memberObjs,lst_of_summonerID)
         return (red, blue)
 
-    def distribute_equally(self, lst):
-        for member in lst:
-            self.dict_of_players[member] = []
-            league_id = member.display_name
-            #If display name [ADC] P247 Paint then we need to remove [ADC]
-            if league_id.startswith('['):
-                removal = ""
-                for char in league_id:
-                    if char == "]":
-                        removal +="] "
-                        break
-                    else:
-                        removal+=char
-                league_id = league_id[len(removal):]
-            league_region = 'na1' #hardcoded
-            rank = self.fetch_rank(league_id, league_region) # fetching rank and adding it to the player's creds list
-            self.dict_of_players[member].append(self.rank_value(rank))
-        self.bubbleSort(lst)
+    def distribute_equally(self, lst_of_memberObjs, lst_of_summonerID):
+        for index in range(len(lst_of_memberObjs)):
+            self.dict_of_players[lst_of_memberObjs[index]] = []
+            rank = self.fetch_rank(lst_of_summonerID[index]) # fetching rank and adding it to the player's creds list
+            self.dict_of_players[lst_of_memberObjs[index]].append(self.rank_value(rank))
+        self.bubbleSort(lst_of_memberObjs)
 
-        for member in lst:
+        for member in lst_of_memberObjs:
             lol_roles = ['Top', 'Jungle', 'Mid', 'Adc', 'Support']
             for role in member.roles:
                 if role.startswith('Main '):
@@ -57,7 +46,7 @@ class MatchMaking:
         blue_sum = 0
         #MATCHMAKING
         index = 0
-        for member in lst:
+        for member in lst_of_memberObjs:
             if len(blue) == 5:
                 self.assign_role(redQueue,member,red)
             elif len(red) == 5:
@@ -96,14 +85,45 @@ class MatchMaking:
             dict[queue.pop()] = member
 
     @staticmethod
-    def fetch_rank(league_id, league_region):
+    def fetch_summonerID(memberObj):
+        API_KEY = config["RIOT_API_KEY"]
+        watcher = LolWatcher(API_KEY)
+
+        league_id = memberObj.display_name
+        #If display name [ADC] P247 Paint then we need to remove [ADC]
+        if league_id.startswith('['):
+            removal = ""
+            for char in league_id:
+                if char == "]":
+                    removal +="] "
+                    break
+                else:
+                    removal+=char
+            league_id = league_id[len(removal):]
+        league_region = 'na1' #hardcoded
+        try:
+            data = watcher.summoner.by_name(league_id,league_region)
+            return data['id'] #summonerid
+        except ApiError as err:
+            if err.response.status_code == 429:
+                print('We should retry in {} seconds.'.format(err.headers['Retry-After']))
+                print('this retry-after is handled by default by the RiotWatcher library')
+                print('future requests wait until the retry-after time passes')
+            elif err.response.status_code == 404:
+                return err.response.status_code
+            elif err.response.status_code == 403:
+                print("API Key is invalid.")
+
+
+
+    @staticmethod
+    def fetch_rank(summonerID):
         #API action here
         API_KEY = config["RIOT_API_KEY"]
         watcher = LolWatcher(API_KEY)
 
         try:
-            me = watcher.summoner.by_name(league_region,league_id)
-            rank_stats = watcher.league.by_summoner(league_region,me['id'])
+            rank_stats = watcher.league.by_summoner(summonerID)
             rank = rank_stats[0]['tier']
             return rank
 
@@ -117,7 +137,7 @@ class MatchMaking:
             elif err.response.status_code == 403:
                 print("API Key is invalid.")
             else:
-                return [{'tier':'Unranked'}] #RECHECK THIS
+                return 'Unranked' #RECHECK THIS
 
     def rank_value(self,rank):
         rank = rank.lower()
