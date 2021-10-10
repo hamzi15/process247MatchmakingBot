@@ -8,6 +8,7 @@ import random
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import Bot
+from discord.utils import get
 
 from utils.matchmaking import MatchMaking
 from utils.queue import Queue
@@ -22,7 +23,6 @@ intents = discord.Intents.all()
 intents.members = True
 bot = Bot(command_prefix=config["bot_prefix"], intents=intents)
 queue = Queue()  # Queue object initialization
-
 
 
 @bot.event
@@ -51,67 +51,145 @@ async def add_to_spectator_channel(user: discord.Member):
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
     print('inside on voice state')
     lobby_channel = config['channel_ids']['lobby_channel_id']
-    if before.channel is None and after.channel is not None:
-        if after.channel.id == lobby_channel:
-            print('inside on voice state if')
-            lobby_channel = member.voice.channel
-            queue.push(member)
-            no_of_members = len(lobby_channel.members)
-            if no_of_members >= 10:
-                no_of_members -= 10
-                list_of_players = list()
-                if queue.__len__() == 10:
-                    while queue.__len__():
-                        list_of_players.append(queue.pop())
-                matchmakingObj = MatchMaking()
-                red, blue = matchmakingObj.matchmaker(
-                    list_of_players)  # red_blue_team_looks_like_this = { 'role': 'discord_id', 'role2': 'discord_id2'}
-                # CURRENTLY red_blue_team_looks_like_this = { role': memberobj, 'role2': memberobj}
-                red_channel, blue_channel, text_channel = create_channels(member.guild)
-                embed = discord.Embed(color=random.randint(0, 0xffff), description="⏳ Matchmaking...")
-                embed.timestamp = datetime.datetime.now()
-                msg = await text_channel.send(embed)
-                for key in red:
-                    await red[key].move_to(red_channel.id)
-                for key in blue:
-                    await blue[key].move_to(blue_channel.id)
-                teams_and_roles_description = get_description(red, blue)
-                embed.description = teams_and_roles_description
-                await msg.edit(embed=embed)
-                await get_attention(no_of_members)
+
+    if before.channel.id == lobby_channel and after.channel is None:    # pop member from queue if they leave the lobby
+        if member in queue.lst:
+            queue.lst.pop(member)
+
+    if before.channel is None and after.channel is not None:    # if member joins the lobby
+        try:
+            if after.channel.id == lobby_channel:
+                print('inside on voice state if')
+                lobby_channel = member.voice.channel
+                queue.push(member)
+                no_of_members = len(lobby_channel.members)
+                if no_of_members >= 1:
+                    no_of_members -= 1
+                    list_of_players = list()
+                    if queue.__len__() == 1:
+                        while queue.__len__():
+                            list_of_players.append(queue.pop())
+                    matchmakingObj = MatchMaking()
+                    red, blue = matchmakingObj.matchmaker(
+                        list_of_players)  # CURRENTLY red_blue_team_looks_like_this = { role': memberobj, 'role2':
+                    # memberobj}
+                    red_channel, blue_channel, text_channel = await create_channels(member.guild)
+                    embed = discord.Embed(color=random.randint(0, 0xffff), description="⏳ Matchmaking...")
+                    embed.timestamp = datetime.datetime.now()
+                    msg = await text_channel.send(embed=embed)
+                    for key in red:
+                        await red[key].move_to(red_channel)
+                    for key in blue:
+                        await blue[key].move_to(blue_channel)
+                    teams_and_roles_description = get_description(red, blue)
+                    embed.description = teams_and_roles_description
+                    await msg.edit(embed=embed)
+        except Exception as e:
+            print(e)
+
+    if ('red side' in str(before.channel.name).lower() and 'blue side' in str(after.channel.name).lower()) or \
+            ('blue side' in str(before.channel.name).lower() and 'red side' in str(after.channel.name).lower()):
+            # if member changes team voice channel, i.e. from red side to blue side or vice versa
+        try:
+            await member.move_to(before.channel)
+            await member.send(embed=discord.Embed(color=0xff0000, description="**WARNING**\n" \
+                                                                              "You can't join the other teams voice channel."
+                                                                              "**Don't do it again. Tha admins are notified**"))
+        except Exception as e:
+            print(e)
+
+    if ('red side' in str(before.channel.name).lower() or 'blue side' in str(
+            before.channel.name).lower()) and after.channel is None:
+        try:
+            role_name = str(before.channel.name)
+            role = get(member.guild.roles, name=role_name)
+            await member.remove_roles([role])  # if member leaves a match voice channel, remove secret role
+
+            channel = before.channel
+            if not channel.members:  # delete category and voice channels empty
+                flag = True
+                list_of_category_channels = channel.category.channels
+                for category_channel in list_of_category_channels:
+                    if category_channel != channel and str(category_channel.type) != "text":
+                        if category_channel.members:
+                            flag = False
+                            break
+                        else:
+                            continue
+                if flag:
+                    for channel in list_of_category_channels:
+                        await channel.delete()
+                    await channel.category.delete()
+
+            # categories = member.guild.categories
+            # for category in categories:
+            #     if "process" in str(category.name).roles and 'lobby' in str(category.name).roles:
+            #         flag = True
+            #         for channel in category.channels:
+            #             if len(channel.members):
+            #                 flag = False
+            #                 break
+            #         if flag:
+            #             await delete_role(member)
+            #             category.delete()  # delete category
+
+        except Exception as e:
+            print(e)
+
+
+# async def delete_role(member):  # delete role
+#     # guild = member.guild
+#     # for role in guild.roles:
+#     #     role_name = str(role.name)
+#     #     if 'process' in role_name.lower() and 'lobby' in role_name.lower():
+#     #         for member in guild.members:
+#     #             if role_name in [str(role.name) for role in guild.roles]:
+#     #
+# 
+#     for i in member.roles:
+#         role = str(i.name)
+#         if 'process' in role.lower() and 'lobby' in role.lower():
+#             role_name = role
+#             role = get(member.guild.roles, name=role_name)
+#             await role.delete()
 
 
 def get_description(red, blue):
-    description = f"**Teams and Roles**\n\n" \
-                  f"**:red_circle: Red Side**\n" \
-                  f"   Top     - <!@{red['top'].id}>\n" \
-                  f"   Jungle  - <!@{red['jungle'].id}>\n" \
-                  f"   Mid     - <!@{red['mid'].id}>\n" \
-                  f"   ADC     - <!@{red['adc'].id}>\n" \
-                  f"   Support - <!@{red['support'].id}>\n\n" \
-                  f"**:blue_circle: Blue Side**\n" \
-                  f"   Top     - <!@{blue['top'].id}>\n" \
-                  f"   Jungle  - <!@{blue['jungle'].id}>\n" \
-                  f"   Mid     - <!@{blue['mid'].id}>\n" \
-                  f"   ADC     - <!@{blue['adc'].id}>\n" \
-                  f"   Support - <!@{blue['support'].id}>\n"
-    return description
+    try:
+        description = f"**⚔️Teams and Roles**\n\n" \
+                      f"**🔴 Red Side: **\n" \
+                      f"   Top     - <!@{red['top'].id}>\n" \
+                      f"   Jungle  - <!@{red['jungle'].id}>\n" \
+                      f"   Mid     - <!@{red['mid'].id}>\n" \
+                      f"   ADC     - <!@{red['adc'].id}>\n" \
+                      f"   Support - <!@{red['support'].id}>\n\n" \
+                      f"**🔵 Blue: **\n" \
+                      f"   Top     - <!@{blue['top'].id}>\n" \
+                      f"   Jungle  - <!@{blue['jungle'].id}>\n" \
+                      f"   Mid     - <!@{blue['mid'].id}>\n" \
+                      f"   ADC     - <!@{blue['adc'].id}>\n" \
+                      f"   Support - <!@{blue['support'].id}>\n\n\n" \
+                      f"*Please don't leave the voice channel till you are done with the match, otherwise you won't be able to join again. If it was a network issue, contact the administrator.*"
+        await get_attention(queue.__len__())
+        return description
+    except:
+        return "kintama ⚔🔵🔴"
 
 
 async def get_attention(no_of_members):
     get_attention_channel = config['channel_ids']['get_attention_channel_id']
     channel = bot.get_channel(get_attention_channel)  # id of the attention channel
     embed = discord.Embed(color=random.randint(0, 0xffff),
-                          description='            **ATTENTION**\n\nA new match has just started.\n')
-    embed.add_field(name="Number of subs remaining in the lobby",
-                    value=f"{no_of_members}\n")
-    embed.set_footer(text="*Join lobby now to start a new match*")
+                          description='            **ATTENTION**\nA new match has just started.\n\n')
+    embed.add_field(name="Number of subs remaining",
+                    value=f"{no_of_members}\n\n")
+    embed.set_footer(text="Join lobby now to start a new match")
     embed.timestamp = datetime.datetime.now()
     await channel.send(content='@everyone', embed=embed)
 
 
 def generate_name():
-    name = f"Process247 Lobby {config['lobby_number']}"
+    name = f"Process247 Lobby | {config['lobby_number']}"
     config['lobby_number'] += 1
     with open('config.json', 'w') as file:
         json.dump(config, file)
@@ -119,11 +197,17 @@ def generate_name():
     return name
 
 
-def create_channels(guild):
-    category = guild.create_category(name=generate_name())
-    red = category.create_voice_channel(name=":red_circle: • Red Side", bitrate=95, user_limit=5)
-    blue = category.create_voice_channel(name=":blue_circle: • Blue Side", bitrate=95, user_limit=5)
-    text_channel = category.create_text_channel(name=":crossed_swords: Teams And Roles")
+async def create_channels(guild):
+    role_category_name = generate_name()
+    category = await guild.create_category(name=role_category_name)
+    role = await guild.create_role(name=role_category_name)
+    await category.set_permissions(role, read_messages=True, send_messages=True, connect=True, speak=True)
+    # make category accessible only to people with a specific role which we generate. The name of
+    # the category and role must be the same
+    await category.set_permissions(guild.default_role, read_messages=False, connect=False)
+    red = await category.create_voice_channel(name="🔴 • Red Side", bitrate=96000, user_limit=5)
+    blue = await category.create_voice_channel(name="🔵 • Blue Side", bitrate=96000, user_limit=5)
+    text_channel = await category.create_text_channel(name="⚔️Teams And Roles")
     return red, blue, text_channel
 
 
