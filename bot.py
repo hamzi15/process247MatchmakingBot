@@ -57,11 +57,12 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             lobby_channel = member.voice.channel
             queue.push(member)
             no_of_members = len(lobby_channel.members)
-            if no_of_members >= 1:
-                no_of_members -= 1
+            if no_of_members >= 10:
+                no_of_members -= 10
                 list_of_players = list()
-                for i in range(1):
-                    list_of_players.append(queue.pop())
+                if queue.__len__() == 10:
+                    while queue.__len__():
+                        list_of_players.append(queue.pop())
                 matchmakingObj = MatchMaking()
                 red, blue = matchmakingObj.matchmaker(
                     list_of_players)  # red_blue_team_looks_like_this = { 'role': 'discord_id', 'role2': 'discord_id2'}
