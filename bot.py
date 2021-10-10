@@ -18,10 +18,11 @@ else:
     with open("config.json") as file:
         config = json.load(file)
 
-intents = discord.Intents.default()
+intents = discord.Intents.all()
 intents.members = True
 bot = Bot(command_prefix=config["bot_prefix"], intents=intents)
 queue = Queue()  # Queue object initialization
+
 
 
 @bot.event
@@ -46,50 +47,59 @@ async def add_to_spectator_channel(user: discord.Member):
     return channel
 
 
-@commands.Cog.listener()
+@bot.event
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
-    if after.channel == 879421009936130048:
-        lobby_channel = member.voice.channel
-        queue.push(member)
-        no_of_members = len(lobby_channel.members)
-        if no_of_members >= 10:
-            no_of_members -= 10
-            list_of_players = list()
-            for i in range(10):
-                list_of_players.append(queue.pop())
-            matchmakingObj = MatchMaking()
-            red, blue = matchmakingObj.matchmaker(
-                list_of_players)  # red_blue_team_looks_like_this = { 'role': 'discord_id', 'role2': 'discord_id2'}
-            # CURRENTLY red_blue_team_looks_like_this = { role': memberobj, 'role2': memberobj}
-            red_channel, blue_channel, text_channel = create_channels(member.guild)
-            for key in red:
-                await bot.get_user(red[key]).move_to(red_channel.id)
-            for key in blue:
-                await bot.get_user(blue[key]).move_to(blue_channel.id)
-            teams_and_roles_embed = get_embed(red, blue)
-            text_channel.send(embed=teams_and_roles_embed)
+    print('inside on voice state')
+    lobby_channel = config['channel_ids']['lobby_channel_id']
+    if before.channel is None and after.channel is not None:
+        if after.channel.id == lobby_channel:
+            print('inside on voice state if')
+            lobby_channel = member.voice.channel
+            queue.push(member)
+            no_of_members = len(lobby_channel.members)
+            if no_of_members >= 1:
+                no_of_members -= 1
+                list_of_players = list()
+                for i in range(1):
+                    list_of_players.append(queue.pop())
+                matchmakingObj = MatchMaking()
+                red, blue = matchmakingObj.matchmaker(
+                    list_of_players)  # red_blue_team_looks_like_this = { 'role': 'discord_id', 'role2': 'discord_id2'}
+                # CURRENTLY red_blue_team_looks_like_this = { role': memberobj, 'role2': memberobj}
+                red_channel, blue_channel, text_channel = create_channels(member.guild)
+                embed = discord.Embed(color=random.randint(0, 0xffff), description="⏳ Matchmaking...")
+                embed.timestamp = datetime.datetime.now()
+                msg = await text_channel.send(embed)
+                for key in red:
+                    await red[key].move_to(red_channel.id)
+                for key in blue:
+                    await blue[key].move_to(blue_channel.id)
+                teams_and_roles_description = get_description(red, blue)
+                embed.description = teams_and_roles_description
+                await msg.edit(embed=embed)
+                await get_attention(no_of_members)
 
 
-def get_embed(red, blue):
-    embed = discord.Embed(color=random.randint(0, 0xffff), description=f"**Teams and Roles**\n\n"
-                                                                f"**:red_circle: Red Side**\n"
-                                                                f"   Top     - <!@{red['top']}>\n"
-                                                                f"   Jungle  - <!@{red['jungle']}>\n"
-                                                                f"   Mid     - <!@{red['mid']}>\n"
-                                                                f"   ADC     - <!@{red['adc']}>\n"
-                                                                f"   Support - <!@{red['support']}>\n\n"
-                                                                f"**:blue_circle: Blue Side**\n"
-                                                                f"   Top     - <!@{blue['top']}>\n"
-                                                                f"   Jungle  - <!@{blue['jungle']}>\n"
-                                                                f"   Mid     - <!@{blue['mid']}>\n"
-                                                                f"   ADC     - <!@{blue['adc']}>\n"
-                                                                f"   Support - <!@{blue['support']}>\n")
-    embed.timestamp = datetime.datetime.now()
-    return embed
+def get_description(red, blue):
+    description = f"**Teams and Roles**\n\n" \
+                  f"**:red_circle: Red Side**\n" \
+                  f"   Top     - <!@{red['top'].id}>\n" \
+                  f"   Jungle  - <!@{red['jungle'].id}>\n" \
+                  f"   Mid     - <!@{red['mid'].id}>\n" \
+                  f"   ADC     - <!@{red['adc'].id}>\n" \
+                  f"   Support - <!@{red['support'].id}>\n\n" \
+                  f"**:blue_circle: Blue Side**\n" \
+                  f"   Top     - <!@{blue['top'].id}>\n" \
+                  f"   Jungle  - <!@{blue['jungle'].id}>\n" \
+                  f"   Mid     - <!@{blue['mid'].id}>\n" \
+                  f"   ADC     - <!@{blue['adc'].id}>\n" \
+                  f"   Support - <!@{blue['support'].id}>\n"
+    return description
 
 
 async def get_attention(no_of_members):
-    channel = bot.get_channel(1234)  # id of the attention channel
+    get_attention_channel = config['channel_ids']['get_attention_channel_id']
+    channel = bot.get_channel(get_attention_channel)  # id of the attention channel
     embed = discord.Embed(color=random.randint(0, 0xffff),
                           description='            **ATTENTION**\n\nA new match has just started.\n')
     embed.add_field(name="Number of subs remaining in the lobby",
