@@ -117,7 +117,7 @@ class MatchMaking:
             elif err.response.status_code == 403:
                 print("API Key is invalid.")
             else:
-                return 'Unranked' #RECHECK THIS
+                return [{'tier':'Unranked'}] #RECHECK THIS
 
     def rank_value(self,rank):
         rank = rank.lower()
