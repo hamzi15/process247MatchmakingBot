@@ -61,6 +61,22 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             if after.channel.id == lobby_channel:
                 print('inside on voice state if')
                 lobby_channel = member.voice.channel
+
+                lst_of_summonerID = []
+                member_summonerID = MatchMaking.fetch_summonerID(member)
+                #HERE WE CAN DO THE ERROR CODES IF THE CODE RECIEVED IS 404 THEN THE ID THE DISPLAY_NAME IS NOT A LEAGUE ID
+                #And we need to remove that player from the lobby? voice channel?
+                #Or maybe give them a chance to enter their league ID? in text channel?
+                #Else we will recive a summoner id that we need to add to the lst_of_summonerID and send to the matchmaker function.
+                if member_summonerID == 404:
+                    try:
+                        await member.send(embed=discord.Embed(color=0xff0000, description="**WARNING**\n" \
+                                                                                          "Your discord display name is not a leagueID."
+                                                                                          "****"))
+                    except Exception as e:
+                        print(e)
+                else:
+                    lst_of_summonerID.append(member_summonerID)
                 queue.push(member)
                 no_of_members = len(lobby_channel.members)
                 if no_of_members >= 1:
@@ -71,7 +87,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                             list_of_players.append(queue.pop())
                     matchmakingObj = MatchMaking()
                     red, blue = matchmakingObj.matchmaker(
-                        list_of_players)  # CURRENTLY red_blue_team_looks_like_this = { role': memberobj, 'role2':
+                        list_of_players,lst_of_summonerID)  # CURRENTLY red_blue_team_looks_like_this = { role': memberobj, 'role2':
                     # memberobj}
                     red_channel, blue_channel, text_channel = await create_channels(member.guild)
                     embed = discord.Embed(color=random.randint(0, 0xffff), description="⏳ Matchmaking...")
@@ -89,7 +105,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 
     if ('red side' in str(before.channel.name).lower() and 'blue side' in str(after.channel.name).lower()) or \
             ('blue side' in str(before.channel.name).lower() and 'red side' in str(after.channel.name).lower()):
-            # if member changes team voice channel, i.e. from red side to blue side or vice versa
+        # if member changes team voice channel, i.e. from red side to blue side or vice versa
         try:
             await member.move_to(before.channel)
             await member.send(embed=discord.Embed(color=0xff0000, description="**WARNING**\n" \
@@ -145,7 +161,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 #     #         for member in guild.members:
 #     #             if role_name in [str(role.name) for role in guild.roles]:
 #     #
-# 
+#
 #     for i in member.roles:
 #         role = str(i.name)
 #         if 'process' in role.lower() and 'lobby' in role.lower():
