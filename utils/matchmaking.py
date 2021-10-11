@@ -28,20 +28,27 @@ class MatchMaking:
             league_id = re.split('[ ]', member.display_name)[1]
             # If display name [ADC] P247 Paint then we need to remove [ADC]
             league_region = 'na1'  # hardcoded
-            rank = await self.fetch_rank(league_id, league_region)  # fetching rank and adding it to the player's creds list
+            rank = await self.fetch_rank(league_id,
+                                         league_region)  # fetching rank and adding it to the player's creds list
             self.dict_of_players[member].append(self.rank_value(rank))
         self.bubbleSort(lst)
 
         for member in lst:
             lol_roles = ['Top', 'Jungle', 'Mid', 'Adc', 'Support']
             for role in member.roles:
-                role = (role.name.split())[1]
-                # if role.startswith('Mains '):
-                #     role = role.split()
-                #     role = role[5:]
-                if role in lol_roles:
-                    self.dict_of_players[member].append(role)
-                    # add check that at least one role has been assigned
+                if role.name.startswith('Mains '):  # where are you dealing with the secondary role?
+                                                    # 'Mains' is the primary role
+                    primary_role = (role.name.split())[1]
+                    if primary_role in lol_roles:
+                        self.dict_of_players[member].append(primary_role)
+                if role.name in lol_roles:
+                    secondary_role = role.name
+                    # this is the secondary role
+                    
+            #     role = role.split()
+            #     role = role[5:]
+
+            # add check that at least one role has been assigned
         # matchmaking starts here then make two lists of players
         # also put a check if a player has no rank then give them diamond rank
         red = {}
