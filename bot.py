@@ -1,7 +1,9 @@
+import asyncio
 import datetime
 import json
 import os
 import platform
+import re
 import sys
 import random
 
@@ -9,6 +11,7 @@ import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import Bot
 from discord.utils import get
+from riotwatcher import LolWatcher, ApiError
 
 from utils.matchmaking import MatchMaking
 from utils.queue import Queue
@@ -52,50 +55,43 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
     print('inside on voice state')
     lobby_channel = config['channel_ids']['lobby_channel_id']
 
-    if before.channel.id == lobby_channel and after.channel is None:    # pop member from queue if they leave the lobby
+    if before.channel.id == lobby_channel and after.channel is None:  # pop member from queue if they leave the lobby
+        print('inside on voice state if member leaves the lobby')
         if member in queue.lst:
             queue.lst.pop(member)
+        print(f'{member.name} left the lobby')
 
-    if before.channel is None and after.channel is not None:    # if member joins the lobby
+    if before.channel is None and after.channel is not None:  # if member joins the lobby
         try:
             if after.channel.id == lobby_channel:
-                print('inside on voice state if')
+                print('inside on voice state if member joins')
+                print(f'{member.name} joined the lobby')
+                if not validate(member.name):
+                    await member.move_to(get(member.guild.channels, id=879421470869192785))
+                    await member.send(embed=discord.Embed(color=0xff000, description="*We couldn't find you in LoL database. If you are registered with LoL then please add your league id in your server nickname, i.e. '[ADA] P429'.\nOR\nContact the server admins.*"))
+                    return
                 lobby_channel = member.voice.channel
-
-                lst_of_summonerID = []
-                member_summonerID = MatchMaking.fetch_summonerID(member)
-                #HERE WE CAN DO THE ERROR CODES IF THE CODE RECIEVED IS 404 THEN THE ID THE DISPLAY_NAME IS NOT A LEAGUE ID
-                #And we need to remove that player from the lobby? voice channel?
-                #Or maybe give them a chance to enter their league ID? in text channel?
-                #Else we will recive a summoner id that we need to add to the lst_of_summonerID and send to the matchmaker function.
-                if member_summonerID == 404:
-                    try:
-                        await member.send(embed=discord.Embed(color=0xff0000, description="**WARNING**\n" \
-                                                                                          "Your discord display name is not a leagueID."
-                                                                                          "****"))
-                    except Exception as e:
-                        print(e)
-                else:
-                    lst_of_summonerID.append(member_summonerID)
                 queue.push(member)
                 no_of_members = len(lobby_channel.members)
-                if no_of_members >= 1:
-                    no_of_members -= 1
+                if no_of_members >= 10:
+                    no_of_members -= 10
                     list_of_players = list()
-                    if queue.__len__() == 1:
+                    if queue.__len__() == 10:
                         while queue.__len__():
                             list_of_players.append(queue.pop())
                     matchmakingObj = MatchMaking()
                     red, blue = matchmakingObj.matchmaker(
-                        list_of_players,lst_of_summonerID)  # CURRENTLY red_blue_team_looks_like_this = { role': memberobj, 'role2':
+                        list_of_players)  # CURRENTLY red_blue_team_looks_like_this = { role': memberobj, 'role2':
                     # memberobj}
-                    red_channel, blue_channel, text_channel = await create_channels(member.guild)
+                    red_channel, blue_channel, text_channel, role = await create_channels(member.guild)
                     embed = discord.Embed(color=random.randint(0, 0xffff), description="⏳ Matchmaking...")
                     embed.timestamp = datetime.datetime.now()
                     msg = await text_channel.send(embed=embed)
                     for key in red:
+                        await red[key].add_roles(role)
                         await red[key].move_to(red_channel)
                     for key in blue:
+                        await blue[key].add_roles(role)
                         await blue[key].move_to(blue_channel)
                     teams_and_roles_description = get_description(red, blue)
                     embed.description = teams_and_roles_description
@@ -119,10 +115,10 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
         try:
             role_name = str(before.channel.name)
             role = get(member.guild.roles, name=role_name)
-            await member.remove_roles([role])  # if member leaves a match voice channel, remove secret role
+            await member.remove_roles(role)  # if member leaves a match voice channel, remove secret role
 
             channel = before.channel
-            if not channel.members:  # delete category and voice channels empty
+            if not channel.members:  # delete category and empty voice channels empty
                 flag = True
                 list_of_category_channels = channel.category.channels
                 for category_channel in list_of_category_channels:
@@ -161,7 +157,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 #     #         for member in guild.members:
 #     #             if role_name in [str(role.name) for role in guild.roles]:
 #     #
-#
+# 
 #     for i in member.roles:
 #         role = str(i.name)
 #         if 'process' in role.lower() and 'lobby' in role.lower():
@@ -224,7 +220,7 @@ async def create_channels(guild):
     red = await category.create_voice_channel(name="🔴 • Red Side", bitrate=96000, user_limit=5)
     blue = await category.create_voice_channel(name="🔵 • Blue Side", bitrate=96000, user_limit=5)
     text_channel = await category.create_text_channel(name="⚔️Teams And Roles")
-    return red, blue, text_channel
+    return red, blue, text_channel, role
 
 
 bot.remove_command("help")
@@ -287,6 +283,42 @@ async def on_command_error(context, error):
         )
         await context.send(embed=embed)
     raise error
+
+
+async def lol_validation(league_id, league_region):  # validate the user from league api here
+    # API action here
+    API_KEY = config["RIOT_API_KEY"]
+    watcher = LolWatcher(API_KEY)
+
+    # if user exists: return True else return False (look for endpoint 200 or 'success' response)
+
+    # for i in range(3):
+    #     try:
+    #         me = watcher.summoner.by_name(league_region, league_id)
+    #         rank_stats = watcher.league.by_summoner(league_region, me['id'])
+    #         rank = rank_stats[0]['tier']
+    #         return rank
+    #
+    #     except ApiError as err:
+    #         if err.response.status_code == 429:
+    #             print('Retrying in {} seconds.'.format(err.headers['Retry-After']))
+    #             print('Endpoint Rate Limit Reached')
+    #             await asyncio.sleep(int(err.headers['Retry-After']))
+    #         elif err.response.status_code == 404:
+    #             print('Summoner with that ridiculous name not found.')
+    #         elif err.response.status_code == 403:
+    #             print("API Key is invalid.")
+    #         else:
+    #             return [{'tier': 'Unranked'}]  # RECHECK THIS
+    #
+    #     except IndexError:
+    #         return ""
+
+
+async def validate(name):
+    league_id = (re.split('[ ]', name))[1]
+    league_region = 'na1'
+    return await lol_validation(league_id, league_region)
 
 
 bot.run(config["token"])
