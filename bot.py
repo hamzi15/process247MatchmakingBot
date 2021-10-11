@@ -52,45 +52,51 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
     print('inside on voice state')
     lobby_channel = config['channel_ids']['lobby_channel_id']
 
-    if before.channel.id == lobby_channel and after.channel is None:  # pop member from queue if they leave the lobby
-        print('inside on voice state if member leaves the lobby')
+    if before.channel.id == lobby_channel and after.channel is None:    # pop member from queue if they leave the lobby
         if member in queue.lst:
             queue.lst.pop(member)
-        print(f'{member.name} left the lobby')
 
-    if before.channel is None and after.channel is not None:  # if member joins the lobby
+    if before.channel is None and after.channel is not None:    # if member joins the lobby
         try:
             if after.channel.id == lobby_channel:
-                print('inside on voice state if member joins')
-                print(f'{member.name} joined the lobby')
-                matchmakingObj = MatchMaking()
-
-                if not matchmakingObj.validate(member):
-                    await member.move_to(get(member.guild.channels, id=879421470869192785))
-                    await member.send(embed=discord.Embed(color=0xff000, description="*We couldn't find you in LoL database. If you are registered with LoL then please add your league id in your server nickname, i.e. '[ADA] P429'. And get a `Rank` role as well as Main and secondary role.\nOR\nContact the server admins.*"))
-                    return
-
+                print('inside on voice state if')
                 lobby_channel = member.voice.channel
+
                 queue.push(member)
                 no_of_members = len(lobby_channel.members)
-                if no_of_members >= 10:
-                    no_of_members -= 10
+                if no_of_members >= 1:
+                    no_of_members -= 1
                     list_of_players = list()
-                    if queue.__len__() == 10:
+                    if queue.__len__() == 1:
                         while queue.__len__():
                             list_of_players.append(queue.pop())
+
+                matchmakingObj = MatchMaking()
+                norank_members = matchmakingObj.prepare_roles_ranks(list_of_players)
+                for member in norank_members:
+                    response = MatchMaking.fetch_rank(member)
+                    #Might need to look at all response codes here.
+                    if response == 404:
+                        #League ID does not exist need to remove member from lobby.
+                        matchmakingObj.dict_of_players.pop(member)   #removing member from object dictionary
+                        matchmakingObj.dict_of_players[''] = [6]     #replacing player with placeholder player ?
+                        index = list_of_players.index(member)
+                        list_of_players[index] = ''                  #Have to place placeholder player in '' in list_of_players
+                    else:
+                        matchmakingObj.dict_of_players[member][0] = MatchMaking.rank_value(response)
+
+
+
                     red, blue = matchmakingObj.matchmaker(
                         list_of_players)  # CURRENTLY red_blue_team_looks_like_this = { role': memberobj, 'role2':
                     # memberobj}
-                    red_channel, blue_channel, text_channel, role = await create_channels(member.guild)
+                    red_channel, blue_channel, text_channel = await create_channels(member.guild)
                     embed = discord.Embed(color=random.randint(0, 0xffff), description="⏳ Matchmaking...")
                     embed.timestamp = datetime.datetime.now()
                     msg = await text_channel.send(embed=embed)
                     for key in red:
-                        await red[key].add_roles(role)
                         await red[key].move_to(red_channel)
                     for key in blue:
-                        await blue[key].add_roles(role)
                         await blue[key].move_to(blue_channel)
                     teams_and_roles_description = get_description(red, blue)
                     embed.description = teams_and_roles_description
@@ -114,10 +120,10 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
         try:
             role_name = str(before.channel.name)
             role = get(member.guild.roles, name=role_name)
-            await member.remove_roles(role)  # if member leaves a match voice channel, remove secret role
+            await member.remove_roles([role])  # if member leaves a match voice channel, remove secret role
 
             channel = before.channel
-            if not channel.members:  # delete category and empty voice channels empty
+            if not channel.members:  # delete category and voice channels empty
                 flag = True
                 list_of_category_channels = channel.category.channels
                 for category_channel in list_of_category_channels:
@@ -132,8 +138,37 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                         await channel.delete()
                     await channel.category.delete()
 
+            # categories = member.guild.categories
+            # for category in categories:
+            #     if "process" in str(category.name).roles and 'lobby' in str(category.name).roles:
+            #         flag = True
+            #         for channel in category.channels:
+            #             if len(channel.members):
+            #                 flag = False
+            #                 break
+            #         if flag:
+            #             await delete_role(member)
+            #             category.delete()  # delete category
+
         except Exception as e:
             print(e)
+
+
+# async def delete_role(member):  # delete role
+#     # guild = member.guild
+#     # for role in guild.roles:
+#     #     role_name = str(role.name)
+#     #     if 'process' in role_name.lower() and 'lobby' in role_name.lower():
+#     #         for member in guild.members:
+#     #             if role_name in [str(role.name) for role in guild.roles]:
+#     #
+#
+#     for i in member.roles:
+#         role = str(i.name)
+#         if 'process' in role.lower() and 'lobby' in role.lower():
+#             role_name = role
+#             role = get(member.guild.roles, name=role_name)
+#             await role.delete()
 
 
 def get_description(red, blue):
@@ -190,7 +225,7 @@ async def create_channels(guild):
     red = await category.create_voice_channel(name="🔴 • Red Side", bitrate=96000, user_limit=5)
     blue = await category.create_voice_channel(name="🔵 • Blue Side", bitrate=96000, user_limit=5)
     text_channel = await category.create_text_channel(name="⚔️Teams And Roles")
-    return red, blue, text_channel, role
+    return red, blue, text_channel
 
 
 bot.remove_command("help")
@@ -204,6 +239,16 @@ if __name__ == "__main__":  # loading the features of the bot
             except Exception as e:
                 exception = f"{type(e).__name__}: {e}"
                 print(f"Failed to load extension {extension}\n{exception}")
+
+
+#
+# @bot.event
+# async def on_member_join(member):
+#
+
+
+# @bot.event
+# async def on_member_remove(member):
 
 
 @bot.event
