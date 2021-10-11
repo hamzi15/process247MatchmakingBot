@@ -9,5 +9,5 @@ class Queue():
         return self.lst.pop(0)
 
     def push(self, object):
-        self.lst.append(object)
-
+        if object not in self.lst:
+            self.lst.append(object)
