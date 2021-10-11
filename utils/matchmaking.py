@@ -35,16 +35,20 @@ class MatchMaking:
 
         for member in lst:
             lol_roles = ['Top', 'Jungle', 'Mid', 'Adc', 'Support']
+            no_of_roles = 2     # some people have more than two roles so we ignore the extra roles
             for role in member.roles:
-                if role.name.startswith('Mains '):  # where are you dealing with the secondary role?
-                                                    # 'Mains' is the primary role
-                    primary_role = (role.name.split())[1]
-                    if primary_role in lol_roles:
-                        self.dict_of_players[member].append(primary_role)
-                if role.name in lol_roles:
-                    secondary_role = role.name
-                    # this is the secondary role
-                    
+                if no_of_roles:
+                    if role.name.startswith('Mains '):  # where are you dealing with the secondary role?
+                                                        # 'Mains' is the primary role
+                        primary_role = (role.name.split())[1]
+                        if primary_role in lol_roles:
+                            self.dict_of_players[member].append(primary_role)
+                            no_of_roles -= 1
+                    if role.name in lol_roles:
+                        secondary_role = role.name
+                        no_of_roles -= 1
+                        # this is the secondary role
+
             #     role = role.split()
             #     role = role[5:]
 
