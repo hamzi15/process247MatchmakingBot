@@ -213,20 +213,22 @@ class MatchMaking:
             lol_roles = ['Top', 'Jungle', 'Mid', 'Adc', 'Support']
             no_of_roles = 2  # some people have more than two roles so we ignore the extra roles
             found_rank_flag = False
-            self.dict_of_players[member] = ['Rank_goes_here', 'Primary_role', 'Secondary role']
+            self.dict_of_players[member] = ['Rank_goes_here','Primary_role']
             for role in member.roles:
                 if no_of_roles:
                     if role.name.startswith('Mains '):
                         # 'Mains' is the primary role
                         primary_role = (role.name.split())[1]
                         if primary_role in lol_roles:
-                            self.dict_of_players[member].append(primary_role)
+                            self.dict_of_players[member][1] = primary_role
                             no_of_roles -= 1
 
                     # ########### this is the secondary role. consider this in matchmaking too #########
-                    # if role.name.lower() in lol_roles:
-                    #     secondary_role = role.name
-                    #     no_of_roles -= 1
+                    if role.name.lower() in lol_roles:
+                         secondary_role = role.name
+                         self.dict_of_players[member].append(secondary_role)
+                         no_of_roles -= 1
+                  
 
                 if role.name.lower() in self.ranks:  # searching for rank in member roles
                     rank = role.name.lower()
