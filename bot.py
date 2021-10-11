@@ -73,8 +73,8 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                 lobby_channel = member.voice.channel
                 queue.push(member)
                 no_of_members = len(lobby_channel.members)
-                if no_of_members >= 3:
-                    no_of_members -= 3
+                if no_of_members >= 10:
+                    no_of_members -= 10
                     list_of_players = list()
                     for i in range(10):
                         list_of_players.append(queue.pop())
@@ -82,7 +82,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                     no_rank_members = matchmakingObj.prepare_roles_ranks(list_of_players)
                     if no_rank_members:
                         for member in no_rank_members:
-                            response = MatchMaking.fetch_rank(member)
+                            response = await MatchMaking.fetch_rank(member)
                             # Might need to look at all response codes here.
                             if response == 404 or response == 403:
                                 # League ID does not exist need to remove member from lobby.
@@ -104,7 +104,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                     for key in blue:
                         await blue[key].add_roles(role)
                         await blue[key].move_to(blue_channel)
-                    teams_and_roles_description = get_description(red, blue)
+                    teams_and_roles_description = await get_description(red, blue)
                     embed.description = teams_and_roles_description
                     await msg.edit(embed=embed)
                     return
@@ -149,7 +149,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             print(e)
 
 
-def get_description(red, blue):
+async def get_description(red, blue):
     try:
         description = f"**⚔️Teams and Roles**\n\n" \
                       f"**🔴 Red Side: **\n" \
