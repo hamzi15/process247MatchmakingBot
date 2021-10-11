@@ -1,9 +1,7 @@
-import asyncio
 import datetime
 import json
 import os
 import platform
-import re
 import sys
 import random
 
@@ -11,7 +9,6 @@ import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import Bot
 from discord.utils import get
-from riotwatcher import LolWatcher, ApiError
 
 from utils.matchmaking import MatchMaking
 from utils.queue import Queue
@@ -66,10 +63,13 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             if after.channel.id == lobby_channel:
                 print('inside on voice state if member joins')
                 print(f'{member.name} joined the lobby')
-                if not validate(member.name):
+                matchmakingObj = MatchMaking()
+
+                if not matchmakingObj.validate(member):
                     await member.move_to(get(member.guild.channels, id=879421470869192785))
-                    await member.send(embed=discord.Embed(color=0xff000, description="*We couldn't find you in LoL database. If you are registered with LoL then please add your league id in your server nickname, i.e. '[ADA] P429'.\nOR\nContact the server admins.*"))
+                    await member.send(embed=discord.Embed(color=0xff000, description="*We couldn't find you in LoL database. If you are registered with LoL then please add your league id in your server nickname, i.e. '[ADA] P429'. And get a `Rank` role as well as Main and secondary role.\nOR\nContact the server admins.*"))
                     return
+
                 lobby_channel = member.voice.channel
                 queue.push(member)
                 no_of_members = len(lobby_channel.members)
@@ -79,7 +79,6 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                     if queue.__len__() == 10:
                         while queue.__len__():
                             list_of_players.append(queue.pop())
-                    matchmakingObj = MatchMaking()
                     red, blue = matchmakingObj.matchmaker(
                         list_of_players)  # CURRENTLY red_blue_team_looks_like_this = { role': memberobj, 'role2':
                     # memberobj}
@@ -283,42 +282,6 @@ async def on_command_error(context, error):
         )
         await context.send(embed=embed)
     raise error
-
-
-async def lol_validation(league_id, league_region):  # validate the user from league api here
-    # API action here
-    API_KEY = config["RIOT_API_KEY"]
-    watcher = LolWatcher(API_KEY)
-
-    # if user exists: return True else return False (look for endpoint 200 or 'success' response)
-
-    # for i in range(3):
-    #     try:
-    #         me = watcher.summoner.by_name(league_region, league_id)
-    #         rank_stats = watcher.league.by_summoner(league_region, me['id'])
-    #         rank = rank_stats[0]['tier']
-    #         return rank
-    #
-    #     except ApiError as err:
-    #         if err.response.status_code == 429:
-    #             print('Retrying in {} seconds.'.format(err.headers['Retry-After']))
-    #             print('Endpoint Rate Limit Reached')
-    #             await asyncio.sleep(int(err.headers['Retry-After']))
-    #         elif err.response.status_code == 404:
-    #             print('Summoner with that ridiculous name not found.')
-    #         elif err.response.status_code == 403:
-    #             print("API Key is invalid.")
-    #         else:
-    #             return [{'tier': 'Unranked'}]  # RECHECK THIS
-    #
-    #     except IndexError:
-    #         return ""
-
-
-async def validate(name):
-    league_id = (re.split('[ ]', name))[1]
-    league_region = 'na1'
-    return await lol_validation(league_id, league_region)
 
 
 bot.run(config["token"])
