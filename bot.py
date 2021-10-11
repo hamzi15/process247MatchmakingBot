@@ -132,37 +132,8 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                         await channel.delete()
                     await channel.category.delete()
 
-            # categories = member.guild.categories
-            # for category in categories:
-            #     if "process" in str(category.name).roles and 'lobby' in str(category.name).roles:
-            #         flag = True
-            #         for channel in category.channels:
-            #             if len(channel.members):
-            #                 flag = False
-            #                 break
-            #         if flag:
-            #             await delete_role(member)
-            #             category.delete()  # delete category
-
         except Exception as e:
             print(e)
-
-
-# async def delete_role(member):  # delete role
-#     # guild = member.guild
-#     # for role in guild.roles:
-#     #     role_name = str(role.name)
-#     #     if 'process' in role_name.lower() and 'lobby' in role_name.lower():
-#     #         for member in guild.members:
-#     #             if role_name in [str(role.name) for role in guild.roles]:
-#     #
-# 
-#     for i in member.roles:
-#         role = str(i.name)
-#         if 'process' in role.lower() and 'lobby' in role.lower():
-#             role_name = role
-#             role = get(member.guild.roles, name=role_name)
-#             await role.delete()
 
 
 def get_description(red, blue):
@@ -233,16 +204,6 @@ if __name__ == "__main__":  # loading the features of the bot
             except Exception as e:
                 exception = f"{type(e).__name__}: {e}"
                 print(f"Failed to load extension {extension}\n{exception}")
-
-
-#
-# @bot.event
-# async def on_member_join(member):
-#
-
-
-# @bot.event
-# async def on_member_remove(member):
 
 
 @bot.event
