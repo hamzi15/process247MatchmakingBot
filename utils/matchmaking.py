@@ -17,6 +17,7 @@ else:
 class MatchMaking:
     def __init__(self):
         self.dict_of_players = {}
+        self.ranks = ['challenger', 'grandmaster', 'master', 'plat', 'gold', 'silver', 'bronze', 'iron']
 
     def matchmaker(self, lst_of_player_memberObjs):
         red, blue = self.distribute_equally(lst_of_player_memberObjs)
@@ -25,40 +26,45 @@ class MatchMaking:
     def distribute_equally(self, lst):
         for member in lst:
             self.dict_of_players[member] = []
-            league_id = re.split('[ ]', member.display_name)[1]
-            # If display name [ADC] P247 Paint then we need to remove [ADC]
-            league_region = 'na1'  # hardcoded
-            rank = await self.fetch_rank(league_id,
-                                         league_region)  # fetching rank and adding it to the player's creds list
-            self.dict_of_players[member].append(self.rank_value(rank))
-        self.bubbleSort(lst)
+
+            # league_id = re.split('[ ]', member.display_name)[1]
+            # # If display name [ADC] P247 Paint then we need to remove [ADC]
+            # league_region = 'na1'  # hardcoded
 
         for member in lst:
             lol_roles = ['Top', 'Jungle', 'Mid', 'Adc', 'Support']
-            no_of_roles = 2     # some people have more than two roles so we ignore the extra roles
+            no_of_roles = 2  # some people have more than two roles so we ignore the extra roles
+            found_rank_flag = False
             for role in member.roles:
                 if no_of_roles:
                     if role.name.startswith('Mains '):  # where are you dealing with the secondary role?
-                                                        # 'Mains' is the primary role
+                        # 'Mains' is the primary role
                         primary_role = (role.name.split())[1]
                         if primary_role in lol_roles:
                             self.dict_of_players[member].append(primary_role)
                             no_of_roles -= 1
-                    if role.name in lol_roles:
+
+                    ########### this is the secondary role. consider this in matchmaking too #########
+                    if role.name.lower() in lol_roles:
                         secondary_role = role.name
                         no_of_roles -= 1
-                        # this is the secondary role
 
-            #     role = role.split()
-            #     role = role[5:]
+                if role.name.lower() in self.ranks:  # searching for rank in member roles
+                    rank = role.name.lower()
+                    found_rank_flag = True
+                    self.dict_of_players[member].append(self.rank_value(rank))
 
-            # add check that at least one role has been assigned
-        # matchmaking starts here then make two lists of players
-        # also put a check if a player has no rank then give them diamond rank
-        red = {}
-        blue = {}
+            if not found_rank_flag:  # if rank not found in roles THEN fetch from API endpoint
+                rank = await self.fetch_rank(
+                    member)  # fetching rank and adding it to the player's creds list if not found
+                self.dict_of_players[member].append(self.rank_value(rank))
+            self.bubbleSort(lst)
+
+        red = {}    # add check that at least one role has been assigned
+        blue = {}   # matchmaking starts here then make two lists of players
         redQueue = ['Top', 'Jungle', 'Mid', 'Adc', 'Support']
         blueQueue = ['Top', 'Jungle', 'Mid', 'Adc', 'Support']
+        # also put a check if a player has no rank then give them diamond rank
         red_sum = 0
         blue_sum = 0
         # MATCHMAKING
@@ -101,10 +107,13 @@ class MatchMaking:
             dict[queue.pop()] = member
 
     @staticmethod
-    async def fetch_rank(league_id, league_region):
+    async def fetch_rank(member):
         # API action here
         API_KEY = config["RIOT_API_KEY"]
         watcher = LolWatcher(API_KEY)
+        league_id = re.split('[ ]', member.display_name)[1]
+        # If display name [ADC] P247 Paint then we need to remove [ADC]
+        league_region = 'na1'  # hardcoded
         for i in range(3):
             try:
                 me = watcher.summoner.by_name(league_region, league_id)
@@ -148,6 +157,13 @@ class MatchMaking:
             return 1
         else:  # diamond or unranked
             return 6
+
+    async def validate(self, member):  # method used by bot.py to make sure that the member has played league before or
+        # entered their league id in the server display name
+        for role in member.roles:
+            if role.name.lower() in self.ranks:
+                return True
+        # write the appropriate code
 
     def bubbleSort(self, arr):
         n = len(arr)
