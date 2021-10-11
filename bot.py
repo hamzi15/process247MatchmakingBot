@@ -65,10 +65,10 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                 print(f'{member.name} joined the lobby')
                 matchmakingObj = MatchMaking()
 
-                if not matchmakingObj.validate(member):
-                    await member.move_to(get(member.guild.channels, id=879421470869192785))
-                    await member.send(embed=discord.Embed(color=0xff000, description="*We couldn't find you in LoL database. If you are registered with LoL then please add your league id in your server nickname, i.e. '[ADA] P429'. And get a `Rank` role as well as Main and secondary role.\nOR\nContact the server admins.*"))
-                    return
+                # if matchmakingObj.validate(member) not in [403, 404, False]:
+                #     await member.move_to(get(member.guild.channels, id=879421470869192785))
+                #     await member.send(embed=discord.Embed(color=0xff000, description="*We couldn't find you in LoL database. If you are registered with LoL then please add your league id in your server nickname, i.e. '[ADA] P429'. And get a `Rank` role as well as Main and secondary role.\nOR\nContact the server admins.*"))
+                #     return
 
                 lobby_channel = member.voice.channel
                 queue.push(member)
@@ -76,12 +76,24 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                 if no_of_members >= 10:
                     no_of_members -= 10
                     list_of_players = list()
-                    if queue.__len__() == 10:
-                        while queue.__len__():
-                            list_of_players.append(queue.pop())
-                    red, blue = matchmakingObj.matchmaker(
-                        list_of_players)  # CURRENTLY red_blue_team_looks_like_this = { role': memberobj, 'role2':
-                    # memberobj}
+                    for i in range(10):
+                        list_of_players.append(queue.pop())
+                    
+                    no_rank_members = matchmakingObj.prepare_roles_ranks(list_of_players)
+                    if no_rank_members:
+                        for member in no_rank_members:
+                            response = MatchMaking.fetch_rank(member)
+                            # Might need to look at all response codes here.
+                            if response == 404 or response == 403:
+                                # League ID does not exist need to remove member from lobby.
+                                queue.lst.pop(member)
+                                await member.move_to(get(member.guild.channels, id=879421470869192785))
+                                await member.send(embed=discord.Embed(color=0xff000, description="*We couldn't find you in LoL database. If you are registered with LoL then please add your league id in your server nickname, i.e. '[ADA] P429'. And get a `Rank` role as well as Main and secondary role.\nOR\nContact the server admins.*"))
+                                return
+                            else:
+                                matchmakingObj.dict_of_players[member][0] = MatchMaking.rank_value(response)
+
+                    red, blue = matchmakingObj.matchmaker(list_of_players)
                     red_channel, blue_channel, text_channel, role = await create_channels(member.guild)
                     embed = discord.Embed(color=random.randint(0, 0xffff), description="⏳ Matchmaking...")
                     embed.timestamp = datetime.datetime.now()
@@ -95,6 +107,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                     teams_and_roles_description = get_description(red, blue)
                     embed.description = teams_and_roles_description
                     await msg.edit(embed=embed)
+                    return
         except Exception as e:
             print(e)
 
@@ -117,7 +130,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             await member.remove_roles(role)  # if member leaves a match voice channel, remove secret role
 
             channel = before.channel
-            if not channel.members:  # delete category and empty voice channels empty
+            if not channel.members:  # delete category and empty voice channels
                 flag = True
                 list_of_category_channels = channel.category.channels
                 for category_channel in list_of_category_channels:
@@ -151,7 +164,7 @@ def get_description(red, blue):
                       f"   Mid     - <!@{blue['mid'].id}>\n" \
                       f"   ADC     - <!@{blue['adc'].id}>\n" \
                       f"   Support - <!@{blue['support'].id}>\n\n\n" \
-                      f"*Please don't leave the voice channel till you are done with the match, otherwise you won't be able to join again. If it was a network issue, contact the administrator.*"
+                      f"*Please don't leave your temas voice channel till you are done with the match, otherwise you won't be able to join again. If it was a network issue, contact the administrator.*"
         await get_attention(queue.__len__())
         return description
     except:
