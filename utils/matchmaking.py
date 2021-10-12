@@ -115,18 +115,26 @@ class MatchMaking:
         league_region = 'na1'  # hardcoded
 
         for i in range(3):
-            try:
-                response = requests.get(f'https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/{league_id}?api_key={API_KEY}')
+            response = requests.get(
+                f'https://{league_region}.api.riotgames.com/lol/summoner/v4/summoners/by-name/{league_id}?api_key={API_KEY}')
+            if response.status_code == 200:
                 summoner_id = response.json()['id']
-                rank_stats = requests.get(f'https://na1.api.riotgames.com/lol/league/v4/entries/by-summoner/{summoner_id}?api_key={API_KEY}')
-                rank = rank_stats.json()[0]['tier']
-                return rank
-            except:
-                if response.text == 429:
-                    print("Rate limit exceeded retrying....")
-                    await asyncio.sleep(1)
+                rank_stats = requests.get(
+                    f'https://{league_region}.api.riotgames.com/lol/league/v4/entries/by-summoner/{summoner_id}?api_key={API_KEY}').json()
+                if rank_stats:
+                    rank = rank_stats[0]['tier']
                 else:
-                    return response
+                    rank = 'unranked'
+                return rank
+            elif response.status_code == 404:
+                return False
+            elif response.status_code == 429 or response.status_code == 503 or response.status_code == 504:
+                print("Rate limit exceeded retrying....")
+                await asyncio.sleep(1)
+
+            elif response.status_code in [400, 401, 403, 405, 500, 502]:
+                print('API Error')
+                break
 
     @staticmethod
     def rank_value(rank):
