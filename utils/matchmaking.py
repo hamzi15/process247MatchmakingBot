@@ -108,11 +108,11 @@ class MatchMaking:
         watcher = LolWatcher(API_KEY)
 
         # If display name [ADC] P247 Paint then we need to remove [ADC]
-        try:
-            league_id = re.split('[ ]', member.display_name)[1]
-        except IndexError:
-            print(f"{member.name} doesn't have league id in their name")
-            return 'unranked'  # RECHECK THIS
+        league_id = re.split('[ ]', member.display_name)
+        if len(league_id) > 1:
+            league_id = f"{league_id[1]} {league_id[2]}"
+        else:
+            league_id = league_id[0]
 
         league_region = 'na1'  # hardcoded
 
