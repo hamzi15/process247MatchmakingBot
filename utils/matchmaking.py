@@ -208,12 +208,13 @@ class MatchMaking:
         self.ranks = ['challenger', 'grandmaster', 'master', 'plat', 'platinum', 'gold', 'silver', 'bronze', 'iron']
 
     def prepare_roles_ranks(self, lst_of_memberObjs):
+        print('inside prepare_roles_ranks')
         no_rank_members = []
         for member in lst_of_memberObjs:
             lol_roles = ['Top', 'Jungle', 'Mid', 'Adc', 'Support']
             no_of_roles = 2  # some people have more than two roles so we ignore the extra roles
             found_rank_flag = False
-            self.dict_of_players[member] = ['Rank_goes_here','Primary_role']
+            self.dict_of_players[member] = ['Rank_goes_here', 'Primary_role']
             for role in member.roles:
                 if no_of_roles:
                     if role.name.startswith('Mains '):
@@ -223,12 +224,10 @@ class MatchMaking:
                             self.dict_of_players[member][1] = primary_role
                             no_of_roles -= 1
 
-                    # ########### this is the secondary role. consider this in matchmaking too #########
                     if role.name.lower() in lol_roles:
-                         secondary_role = role.name
-                         self.dict_of_players[member].append(secondary_role)
-                         no_of_roles -= 1
-                  
+                        secondary_role = role.name
+                        self.dict_of_players[member].append(secondary_role)
+                        no_of_roles -= 1
 
                 if role.name.lower() in self.ranks:  # searching for rank in member roles
                     rank = role.name.lower()
@@ -240,6 +239,7 @@ class MatchMaking:
         return no_rank_members
 
     def matchmaker(self, lst_of_memberObjs):
+        print('inside matchmaker')
         self.bubbleSort(lst_of_memberObjs)
         # matchmaking starts here then make two lists of players
         # also put a check if a player has no rank then give them diamond rank
@@ -277,6 +277,7 @@ class MatchMaking:
     def assign_role(self, queue, member, dict):  # (red or blue queue, member from lst[index], and red or blue dict)
         member_roles = self.dict_of_players[member][
                        1:]  # Now the function can go through more roles or have none and still assign
+        print('inside assign role')
         role_assigned = False
         for role in member_roles:
             if role in queue:
@@ -288,13 +289,19 @@ class MatchMaking:
             dict[queue.pop()] = member
 
     @staticmethod
-    def fetch_rank(member):
+    async def fetch_rank(member):
+        print("inside fetch_rank")
         # API action here
         API_KEY = config["RIOT_API_KEY"]
         watcher = LolWatcher(API_KEY)
 
         # If display name [ADC] P247 Paint then we need to remove [ADC]
-        league_id = re.split('[ ]', member.display_name)[1]
+        try:
+            league_id = re.split('[ ]', member.display_name)[1]
+        except IndexError:
+            print(f"{member.name} doesn't have league id in their name")
+            return 'unranked'  # RECHECK THIS
+
         league_region = 'na1'  # hardcoded
 
         for i in range(3):
@@ -314,10 +321,11 @@ class MatchMaking:
                 elif err.response.status_code == 403:
                     print("API Key is invalid.")
                 else:
-                    return [{'tier': 'Unranked'}]  # RECHECK THIS
+                    return 'unranked'  # RECHECK THIS
 
     @staticmethod
     def rank_value(rank):
+        print('inside rank_value')
         rank = rank.lower()
         if rank == 'challenger':
             return 9
@@ -339,6 +347,7 @@ class MatchMaking:
             return 6
 
     def bubbleSort(self, arr):
+        print('inside bubbleSort')
         n = len(arr)
         for i in range(n):
             for j in range(0, n - i - 1):
