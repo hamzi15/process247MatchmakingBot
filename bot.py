@@ -71,10 +71,10 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             lobby_channel = member.voice.channel
             queue.push(member)
             no_of_members = len(lobby_channel.members)
-            if no_of_members >= 2:
-                no_of_members -= 2
+            if no_of_members >= 1:
+                no_of_members -= 1
                 list_of_players = list()
-                for i in range(2):
+                for i in range(1):
                     list_of_players.append(queue.pop())
 
                 no_rank_members = matchmakingObj.prepare_roles_ranks(list_of_players)
@@ -82,12 +82,14 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                     for member in no_rank_members:
                         response = await MatchMaking.fetch_rank(member)
                         # Might need to look at all response codes here.
-                        if response == 404 or response == 403:
+                        if not response:
                             # League ID does not exist need to remove member from lobby.
-                            queue.lst.remove(member)
+                            list_of_players.remove(member)
+                            for player in list_of_players:
+                                queue.push(player)
                             await member.move_to(get(member.guild.channels, id=879421470869192785))
                             await member.send(embed=discord.Embed(color=0xff000,
-                                                                  description="*We couldn't find you in LoL database. If you are registered with LoL then please add your league id in your server nickname, i.e. '[ADA] P429'. And get a `Rank` role as well as Main and secondary role.\nOR\nContact the server admins.*"))
+                                                                  description="*We couldn't find you in LoL database. If you are registered with LoL then please add your league id in your server nickname, i.e. '[ADA] P429'. AND register with Orianna Bot in the server.\nOR\nContact the server admins.*"))
                             return
                         else:
                             matchmakingObj.dict_of_players[member][0] = MatchMaking.rank_value(response)
