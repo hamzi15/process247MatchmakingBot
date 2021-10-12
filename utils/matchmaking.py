@@ -4,8 +4,7 @@ import os
 import random
 import re
 import sys
-
-from riotwatcher import LolWatcher, ApiError
+import requests
 
 if not os.path.isfile("config.json"):
     sys.exit("'config.json' not found! Add it and try again.")
@@ -105,7 +104,6 @@ class MatchMaking:
         print("inside fetch_rank")
         # API action here
         API_KEY = config["RIOT_API_KEY"]
-        watcher = LolWatcher(API_KEY)
 
         # If display name [ADC] P247 Paint then we need to remove [ADC]
         league_id = re.split('[ ]', member.display_name)
@@ -118,22 +116,17 @@ class MatchMaking:
 
         for i in range(3):
             try:
-                summoner_id = watcher.summoner.by_name(league_id, league_region)
-                rank_stats = watcher.league.by_summoner(encrypted_summoner_id=summoner_id, region=league_region)
-                rank = rank_stats[0]['tier']
+                response = requests.get(f'https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/{league_id}?api_key={API_KEY}')
+                summoner_id = response.json()['id']
+                rank_stats = requests.get(f'https://na1.api.riotgames.com/lol/league/v4/entries/by-summoner/{summoner_id}?api_key={API_KEY}')
+                rank = rank_stats.json()[0]['tier']
                 return rank
-
-            except ApiError as err:
-                if err.response.status_code == 429:
-                    print('We should retry in {} seconds.'.format(err.headers['Retry-After']))
-                    print('API Limit reached!\n')
-                    await asyncio.sleep(int(err.headers['Retry-After']))
-                elif err.response.status_code == 404:
-                    print('Summoner with that ridiculous name not found.')
-                elif err.response.status_code == 403:
-                    print("API Key is invalid.")
+            except:
+                if response.text == 429:
+                    print("Rate limit exceeded retrying....")
+                    await asyncio.sleep(1)
                 else:
-                    return 'unranked'  # RECHECK THIS
+                    return response
 
     @staticmethod
     def rank_value(rank):
