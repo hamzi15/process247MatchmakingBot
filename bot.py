@@ -71,10 +71,10 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             lobby_channel = member.voice.channel
             queue.push(member)
             no_of_members = len(lobby_channel.members)
-            if no_of_members >= 1:
-                no_of_members -= 1
+            if no_of_members >= 2:
+                no_of_members -= 2
                 list_of_players = list()
-                for i in range(1):
+                for i in range(2):
                     list_of_players.append(queue.pop())
 
                 no_rank_members = matchmakingObj.prepare_roles_ranks(list_of_players)
