@@ -98,23 +98,6 @@ class MatchMaking:
                 break
         if not role_assigned:
             dict[queue.pop()] = member
-    @staticmethod
-    def fetch_puuid(member):
-        API_KEY = config['RIOT_API_KEY']
-        league_id = member.display_name
-        for i in range(3):
-            response = requests.get(f"https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/{league_id}?api_key={API_KEY}")
-            if response.status_code == 200:
-                return response.json()['puuid']
-            elif response.status_code == 404:
-                return False
-            elif response.status_code == 429 or response.status_code == 503 or response.status_code == 504:
-                print("Rate limit exceeded retrying....")
-                await asyncio.sleep(1)
-
-            elif response.status_code in [400, 401, 403, 405, 500, 502]:
-                print('API Error')
-                break
 
     @staticmethod
     async def fetch_rank(member):
@@ -136,12 +119,13 @@ class MatchMaking:
                 f'https://{league_region}.api.riotgames.com/lol/summoner/v4/summoners/by-name/{league_id}?api_key={API_KEY}')
             if response.status_code == 200:
                 summoner_id = response.json()['id']
-                puuid = response.json()['puuid']
                 rank_stats = requests.get(
                     f'https://{league_region}.api.riotgames.com/lol/league/v4/entries/by-summoner/{summoner_id}?api_key={API_KEY}').json()
-                if not rank_stats:
-                    rank_stats = [{'tier':'unranked','puuid':f"{puuid}"}]
-                return rank_stats
+                if rank_stats:
+                    rank = rank_stats[0]['tier']
+                else:
+                    rank = 'unranked'
+                return rank
             elif response.status_code == 404:
                 return False
             elif response.status_code == 429 or response.status_code == 503 or response.status_code == 504:
