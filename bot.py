@@ -11,6 +11,7 @@ from discord.ext.commands import Bot
 from discord.utils import get
 
 from utils.matchmaking import MatchMaking
+from utils.stats import Stats
 from utils.queue import Queue
 
 if not os.path.isfile("config.json"):
@@ -77,7 +78,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                 for i in range(2):
                     list_of_players.append(queue.pop())
 
-                puuid_verified_members = {}
+                captain = None
 
                 no_rank_members = matchmakingObj.prepare_roles_ranks(list_of_players)
                 if no_rank_members:
@@ -94,14 +95,13 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                                                                   description="*We couldn't find you in LoL database. If you are registered with LoL then please add your league id in your server nickname, i.e. '[ADA] P429'. AND register with Orianna Bot in the server.\nOR\nContact the server admins.*"))
                             return
                         else:
-                            matchmakingObj.dict_of_players[member][0] = MatchMaking.rank_value(response[0]['tier'])
-                            puuid_verified_members[member] = response[0]['puuid']
-
-                if len(puuid_verified_members) != 3:
-                    puuid_verified_members = get_verified_puuids(puuid_verified_members,list_of_players)
-
-                #select a captain from list of puuid verified members.
-
+                            matchmakingObj.dict_of_players[member][0] = MatchMaking.rank_value(response)
+                            if not captain:
+                                captain = member
+                    if not captain:
+                        number = random.randint(0,9)
+                        captain = list_of_players[number]
+                        
 
                 red, blue = matchmakingObj.matchmaker(list_of_players)
                 red_channel, blue_channel, text_channel, role = await create_channels(member.guild)
@@ -147,6 +147,9 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 
             channel = before.channel
             if not channel.members:  # delete category and empty voice channels
+                ###############################################################
+                #Call stats.py here#
+                #Stats.get_stats(red,blue)
                 flag = True
                 list_of_category_channels = channel.category.channels
                 for category_channel in list_of_category_channels:
@@ -206,15 +209,6 @@ def generate_name():
         json.dump(config, file)
         file.close()
     return name
-
-def get_verified_puuids(puuid_verified_members,list_of_players):
-    for member in list_of_players:
-        if len(puuid_verified_members) == 3: #If we have verified atleast 3 members the we will stop loop.
-            break
-        response = await MatchMaking.fetch_puuid(member)
-        if response:
-            puuid_verified_members[member] = response
-    return puuid_verified_members
 
 
 async def create_channels(guild):
