@@ -52,11 +52,12 @@ class Stats:
             discordid = puuid_dict[puuid].id #discordid
             #Champion_name,kills,deaths,assists,doublekills,triplekills,quadrakills,pentakills
             #CREEPSCORE IS AN ISSUE
+            creepScorePerMin= participant["totalMinionsKilled"]/(participant["timePlayed"]/60)
             statslst = [participant["championName"],participant["win"],participant["kills"],participant["deaths"],participant["assists"],
-                        participant["creepScore"],participant["doubleKills"],participant["tripleKills"],participant["quadraKills"],
+                        creepScorePerMin,participant["doubleKills"],participant["tripleKills"],participant["quadraKills"],
                         participant["pentaKills"],participant["totalDamageDealt"],participant["totalDamageTaken"]]
             stats[discordid] = statslst
-            
+
     @staticmethod
     def Most_Common(lst):
         data = Counter(lst)
