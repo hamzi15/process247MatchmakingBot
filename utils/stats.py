@@ -18,8 +18,7 @@ else:
 class Stats:
     lol_roles = ['Top', 'Jungle', 'Mid', 'Adc', 'Support']
 
-    def __init__(self):
-        pass
+# make a method for fetching a member's match stats so we can add it to the database
 
     @staticmethod
     def get_stats(red, blue):
@@ -52,12 +51,13 @@ class Stats:
         for index in range(len(info_participants)):
             participant = info_participants[index]
             puuid = metadata_participants[index]
-            discordid = puuid_dict[puuid].id  # discordid
-            # win,kills,deaths,assists,doublekills,triplekills,quadrakills,pentakills
+            discordid = puuid_dict[puuid].id        # discordid
+
+            # win, kills, deaths, assists, doubleKills, tripleKills, quadraKills, pentaKills
             creepScorePerMin = participant["totalMinionsKilled"] / (participant["timePlayed"] / 60)
             statslst = {"win": participant["win"], "kills": participant["kills"], "deaths": participant["deaths"],
-                        "assists": participant["assists"],
-                        "totalMinionsKilled": participant["totalMinionsKilled"], "timepPlayed":(participant["timePlayed"]/60),
+                        "assists": participant["assists"], 'creepScore': creepScorePerMin,
+                        "totalMinionsKilled": participant["totalMinionsKilled"], "timePlayed":(participant["timePlayed"]/60),
                         "tripleKills": participant["tripleKills"],"quadraKills": participant["quadraKills"],
                         "pentaKills": participant["pentaKills"], "totalDamageDealt": participant["totalDamageDealt"],
                         "totalDamageTaken": participant["totalDamageTaken"]}
@@ -113,9 +113,10 @@ class Stats:
             elif response.status_code == 404:
                 return False
             elif response.status_code == 429 or response.status_code == 503 or response.status_code == 504:
-                print("Rate limit exceeded retrying....")
+                print("Rate limit exceeded, retrying....")
                 await asyncio.sleep(1)
 
             elif response.status_code in [400, 401, 403, 405, 500, 502]:
                 print('API Error')
                 break
+
