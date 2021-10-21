@@ -1,23 +1,30 @@
 import codecs
 import pickle
-from apscheduler.schedulers.background import BlockingScheduler
+
+import json
+import os
+import sys
+
 import psycopg2
+
+if not os.path.isfile("config.json"):
+    sys.exit("'config.json' not found! Add it and try again.")
+else:
+    with open("config.json") as file:
+        config = json.load(file)
 
 
 class dbAction:
-    scheduler = BlockingScheduler()
     def __init__(self):
-        self.db = psycopg2.connect(host="ec2-23-22-243-103.compute-1.amazonaws.com",
-                                   database="d3fvi6kbgm35kg", user="tlwdfftatkjcnt",
-                                   port=5432, password="81aa0b82170b336db25efdb1b4af241c3925239e0d5adfbe43e5f4a752b938ea")
+        self.db = psycopg2.connect(host=config["database_creds"]["host"], database=config["database_creds"]["database"],
+                                   user=config["database_creds"]["user"], port=config["database_creds"]["port"],
+                                   password=config["database_creds"]["password"])
 
-    async def write_to_db(self, lobby_name, red, blue, captain):
-        cur = self.db.cursor()
-        cur.execute(f"INSERT INTO team_db (match_name, red_team, blue_team, captain) values ({lobby_name}, {self.pickled(red)}, {self.pickled(blue)}, {self.pickled(captain)});")
-        self.db.commit()
-        cur.close()
+    async def write_lb_stats(self, member_summoner_id):
+        # fetch stats here and write them to the database
+        pass
 
-    def check_user(self,discord_id,table):
+    def check_user(self, discord_id, table):
         cur = self.db.cursor()
         cur.execute(f"SELECT discord_id FROM {table};")
         list_of_discord_ids = cur.fetchall()
@@ -26,89 +33,88 @@ class dbAction:
             return True
         return False
 
-    async def pre_write_stats(self,stats):
-        await self.write_stats(stats, "overall_stats")
-
-        #Implement time logic for these ones.
-        await self.write_stats(stats, "weekly_stats")
-        await self.write_stats(stats, "monthly_stats")
-        await self.write_stats(stats, "yearly_stats")
-
-    async def write_stats(self,stats,table):
+    async def write_stats(self, stats, table):
         cur = self.db.cursor()
         for discord_id in stats:
-            no_of_matches = 1
-            win = 0
-            lose = 0
-            kills = stats[discord_id]["kills"]
-            deaths = stats[discord_id]["deaths"]
-            assists = stats[discord_id]["assists"]
-            totalMinionsKilled = stats[discord_id]["totalMinionsKilled"]
-            timeplayed = stats[discord_id]["timePlayed"]
-            tkills = stats[discord_id]["tripleKills"]
-            qkills = stats[discord_id]["quadraKills"]
-            pkills = stats[discord_id]["pentaKills"]
-            tDamageDealt = stats[discord_id]["totalDamageDealt"]
-            tDamageTaken = stats[discord_id]["totalDamageTaken"]
             if stats[discord_id]['win']:
-                win = 1
+                stats[discord_id]['win'] = 1
+                stats[discord_id]['lose'] = 0
             else:
-                lose = 1
-            if not self.check_user(discord_id,table):
-                cur.execute(f"INSERT INTO {table} (discord_id,no_of_matches,wins,loses,kills,deaths,assists,totalMinionsKilled,timeplayed,tripleKills,quadraKills,pentaKills,totalDamageDealt,totalDamageTaken,highestKillGame,highestDeathGame) values ({discord_id},{no_of_matches},{win},{lose},{kills},{deaths},{assists},{totalMinionsKilled},{timeplayed},{tkills},{qkills},{pkills},{tDamageTaken},{tDamageDealt},{kills},{deaths});")
-            else:
-                cur.execute(f"SELECT * FROM {table} WHERE discord_id={discord_id};")
-                old_stats = cur.fetchone()
-                new_stats = [no_of_matches,win,lose,kills,deaths,assists,totalMinionsKilled,timeplayed,tkills,qkills,pkills,tDamageDealt,tDamageTaken]
-                new_stats = dbAction.update_old_stats(old_stats,new_stats)
-                cur.execute(f"UPDATE {table} SET (discord_id = discord_id,no_of_matches = new_stats[0], wins = new_stats[1],loses = new_stats[2],kills=new_stats[3],deaths=new_stats[4],assists=new_stats[5],totalMinionsKilled=new_stats[6],timeplayed=new_stats[7],tripleKills=new_stats[8],quadraKills=new_stats[9],pentaKills=new_stats[10],totalDamageDealt=new_stats[11],totalDamageTaken=new_stats[12],highestKillGame=new_stats[13],highestDeathGame=new_stats[14]) WHERE discord_id = {discord_id};")
+                stats[discord_id]['lose'] = 1
+                stats[discord_id]['win'] = 0
+            if not self.check_user(discord_id, table):
+                cur.execute(
+                    f"""INSERT INTO {table} (discord_id, no_of_matches, wins, loses, kills, deaths, assists, "totalMinionsKilled", "timePlayed", "doubleKills", "tripleKills", "quadraKills", "pentaKills", "totalDamageDealt", "totalDamageTaken", "highestKillGame", "highestDeathGame") values ({discord_id},{1},{stats[discord_id]['win']},{stats[discord_id]['lose']},{stats[discord_id]['kills']},{stats[discord_id]['deaths']},{stats[discord_id]['assists']},{stats[discord_id]['totalMinionsKilled']},{stats[discord_id]['timePlayed']}, {stats[discord_id]['doubleKills']}, {stats[discord_id]['tripleKills']}, {stats[discord_id]['quadraKills']}, {stats[discord_id]['pentaKills']}, {stats[discord_id]['totalDamageTaken']}, {stats[discord_id]['totalDamageDealt']}, {stats[discord_id]['kills']}, {stats[discord_id]['deaths']});""")
+                cur.close()
+                return
+            cur.execute(f"SELECT * FROM {table} WHERE discord_id={int(discord_id)};")
+            old_stats = list(cur.fetchone())
+            # returns tuple (123, 1, 1, 0, 23, 23, 23, 2, 12, 0, 0, 123, 123, 132, 123, 123, 2)
+            no_of_matches = old_stats[1] + 1
+            wins = old_stats[2] + stats[discord_id]['win']
+            loses = old_stats[3] + stats[discord_id]['lose']
+            kills = old_stats[4] + stats[discord_id]["kills"]
+            deaths = old_stats[5] + stats[discord_id]["deaths"]
+            assists = old_stats[6] + stats[discord_id]["assists"]
+            totalMinionsKilled = old_stats[7] + stats[discord_id]["totalMinionsKilled"]
+            timePlayed = old_stats[8] + stats[discord_id]["timePlayed"]
+            dkills = old_stats[16] + stats[discord_id]['doubleKills']
+            tkills = old_stats[9] + stats[discord_id]["tripleKills"]
+            qkills = old_stats[10] + stats[discord_id]["quadraKills"]
+            pkills = old_stats[11] + stats[discord_id]["pentaKills"]
+            tDamageDealt = old_stats[12] + stats[discord_id]["totalDamageDealt"]
+            tDamageTaken = old_stats[13] + stats[discord_id]["totalDamageTaken"]
 
-    async def get_stats(self,table):
+            if old_stats[14] < stats[discord_id]['kills']:          # check this
+                highestKillGame = stats[discord_id]['kills']
+            else:
+                highestKillGame = old_stats[14]
+
+            if old_stats[15] < stats[discord_id]['deaths']:
+                highestDeathGame = stats[discord_id]['deaths']
+            else:
+                highestDeathGame = old_stats[15]
+
+            cur.execute(f"""UPDATE {table}
+             SET (no_of_matches = {no_of_matches}, wins = {wins},loses = {loses},kills={kills},deaths={deaths},assists={assists},"totalMinionsKilled"={totalMinionsKilled},"timePlayed"={timePlayed},"doubleKills"={dkills}, "tripleKills"={tkills}, "quadraKills"={qkills}, "pentaKills"={pkills},"totalDamageDealt"={tDamageDealt},"totalDamageTaken"={tDamageTaken},"highestKillGame"={highestKillGame},"highestDeathGame"={highestDeathGame})
+              WHERE discord_id = {int(discord_id)};""")
+            cur.close()
+            return
+
+    # async def get_stats(self, table):
+    #     cur = self.db.cursor()
+    #     cur.execute(f"SELECT discord_id FROM {table};")
+    #     list_of_discord_ids = cur.fetchall()
+    #     cur.close()
+    #
+    #     stats = {}  # a dictionary will be returned
+    #     for discord_id in list_of_discord_ids:
+    #         cur.execute(f"SELECT * FROM {table} WHERE discord_id={discord_id};")
+    #         unprocessed_stats = cur.fetchone()
+    #
+    #         # Proccessing stats
+    #         winLoseRatio = unprocessed_stats[2] / unprocessed_stats[3]
+    #         killDeathRatio = unprocessed_stats[4] / unprocessed_stats[5]
+    #         assists = unprocessed_stats[6]
+    #         creepScore = unprocessed_stats[7] / unprocessed_stats[8]
+    #         averageDamageDealt = unprocessed_stats[12] / unprocessed_stats[1]
+    #         averageDamageTaken = unprocessed_stats[13] / unprocessed_stats[1]
+    #
+    #         stats[discord_id] = {'no_of_matches': unprocessed_stats[1], 'wins': unprocessed_stats[2], 'losses': unprocessed_stats[3], "winLoseRatio": winLoseRatio, "killDeathRatio": killDeathRatio,
+    #                              'kills': unprocessed_stats[4], 'deaths': unprocessed_stats[5], 'doubleKills': unprocessed_stats[16],
+    #                              "assists": assists, "creepScore": creepScore, "tripleKills": unprocessed_stats[9],
+    #                              "quadraKills": unprocessed_stats[10], "pentaKills": unprocessed_stats[11],
+    #                              "totalDamageDealt": unprocessed_stats[12], "totalDamageTaken": unprocessed_stats[13],
+    #                              "averageDamageDealt": averageDamageDealt, "averageDamageTaken": averageDamageTaken,
+    #                              "highestKillGame": unprocessed_stats[14], "highestDeathGame": unprocessed_stats[15]
+    #                              }
+    #     return stats
+
+    async def write_to_db(self, lobby_name, red, blue, captain):
         cur = self.db.cursor()
-        cur.execute(f"SELECT discord_id FROM {table};")
-        list_of_discord_ids = cur.fetchall()
-
-        stats = {} #a dictionary will be returned
-        for discord_id in list_of_discord_ids:
-            cur.execute(f"SELECT * FROM {table} WHERE discord_id={discord_id};")
-            unproccessed_stats = cur.fetchone()
-
-            #Proccessing stats
-            winLoseRatio = unproccessed_stats[2]/unproccessed_stats[3]
-            killDeathRatio = unproccessed_stats[4]/unproccessed_stats[5]
-            assists = unproccessed_stats[6]
-            creepScore = unproccessed_stats[7]/unproccessed_stats[8]
-            averageDamageDealt = unproccessed_stats[12]/unproccessed_stats[1]
-            averageDamageTaken = unproccessed_stats[13]/unproccessed_stats[1]
-
-            stats[discord_id] = {"winLoseRatio": winLoseRatio, "killDeathRatio": killDeathRatio,
-                                 "assists" : assists, "creepScore" : creepScore, "tripleKills": unproccessed_stats[9],
-                                 "quadraKills" : unproccessed_stats[10], "pentaKills" : unproccessed_stats[11],
-                                 "totalDamageDealt" : unproccessed_stats[12], "totalDamageTaken" : unproccessed_stats[13],
-                                 "averageDamageDealt" : averageDamageDealt, "averageDamageTaken" : averageDamageTaken,
-                                 "highestKillGame" : unproccessed_stats[14], "highestDeathGame" : unproccessed_stats[15]
-                }
-        return stats
-
-
-
-    @staticmethod
-    def update_old_stats(old_stats,new_stats):
-        index = 1 #start from 1 to skip discord_id
-        for stat in new_stats:
-            stat = stat + old_stats[index]
-            index+=1
-        #highest kill and death check
-        if new_stats[3] > old_stats[-2]:
-            new_stats.append(new_stats[3])
-        else:
-            new_stats.append(old_stats[-2])
-        if new_stats[4] > old_stats[-1]:
-            new_stats.append(new_stats[4])
-        else:
-            new_stats.append(old_stats[-1])
-        return new_stats
-
+        cur.execute(f"INSERT INTO team_db (match_name, red_team, blue_team, captain) values ('{lobby_name}', '{self.pickled(red)}', '{self.pickled(blue)}', {self.pickled(captain)});")
+        self.db.commit()
+        cur.close()
 
     @staticmethod
     def pickled(obj):
@@ -120,8 +126,8 @@ class dbAction:
 
     async def get_teams(self, lobby_name):
         cur = self.db.cursor()
-        cur.execute(f"SELECT * FROM team_db WHERE match_name={lobby_name};")
-        print(cur.fetchone())
-        cur.close()
+        cur.execute(f"SELECT * FROM team_db WHERE match_name='{lobby_name}';")
+        lst = cur.fetchone()
+        return self.unpickled(lst[1]), self.unpickled(lst[-1]), int(lst[2])
 
     # def delete_match(self, lobby_name):
