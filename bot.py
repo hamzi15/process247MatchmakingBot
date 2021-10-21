@@ -5,14 +5,16 @@ import platform
 import sys
 import random
 
+import string
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import Bot
 from discord.utils import get
 
+from utils.db import dbAction
 from utils.matchmaking import MatchMaking
-from utils.stats import Stats
 from utils.queue import Queue
+from utils.stats import Stats
 
 if not os.path.isfile("config.json"):
     sys.exit("'config.json' not found! Add it and try again.")
@@ -24,6 +26,7 @@ intents = discord.Intents.all()
 intents.members = True
 bot = Bot(command_prefix=config["bot_prefix"], intents=intents)
 queue = Queue()  # Queue object initialization
+db = dbAction()
 
 
 @bot.event
@@ -40,12 +43,6 @@ async def on_ready():
 async def status_task():  # to set a game's status
     statuses = ["with you!", "with Riot API!", "with humans!"]
     await bot.change_presence(activity=discord.Game(random.choice(statuses)))
-
-
-async def add_to_spectator_channel(user: discord.Member):
-    spectator_channel_id = config['spectator_channel_id']
-    channel = bot.get_channel(spectator_channel_id).add_member(user)
-    return channel
 
 
 @bot.event
@@ -84,7 +81,6 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                 if no_rank_members:
                     for member in no_rank_members:
                         response = await MatchMaking.fetch_rank(member)
-                        # Might need to look at all response codes here.
                         if not response:
                             # League ID does not exist need to remove member from lobby.
                             list_of_players.remove(member)
@@ -99,12 +95,12 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                             if not captain:
                                 captain = member
                     if not captain:
-                        number = random.randint(0,9)
-                        captain = list_of_players[number]
-                        
+                        captain = list_of_players[random.randint(0, 9)]
 
                 red, blue = matchmakingObj.matchmaker(list_of_players)
-                red_channel, blue_channel, text_channel, role = await create_channels(member.guild)
+                red_channel, blue_channel, text_channel, role, password, lobby_name = await create_channels(
+                    member.guild)
+                await db.write_to_db(lobby_name, red, blue, captain.id)
                 embed = discord.Embed(color=random.randint(0, 0xffff), description="⏳ Matchmaking...")
                 embed.timestamp = datetime.datetime.now()
                 msg = await text_channel.send(embed=embed)
@@ -114,8 +110,10 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                 for key in blue:
                     await blue[key].add_roles(role)
                     await blue[key].move_to(blue_channel)
-                teams_and_roles_description = await get_description(red, blue)
+                teams_and_roles_description = await get_description(red, blue, password, role.name, captain.id)
                 embed.description = teams_and_roles_description
+                log_channel = get(member.guild.channels, name=config["log_channel_id"])
+                await log_channel.send(embed=embed)
                 await msg.edit(embed=embed)
 
     try:
@@ -128,28 +126,25 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                 await member.move_to(before.channel)
                 await member.send(embed=discord.Embed(color=0xff0000, description="**WARNING**\n" \
                                                                                   "You can't join the other teams voice channel.\n\n"
-                                                                                  "**Don't do it again. Tha admins are notified**"))
+                                                                                  "**Don't do it again. Tha admins are notified.**"))
+                # await db.write_lb_stats(member_summoner_id=)
             except Exception as e:
                 print(e)
     except:
         print('passing from member changed teams')
         pass
 
-
-
     try:
         if (after.channel is None or after.channel.type == 'voice') and before.channel is not None and (
                 'red side' in str(before.channel.name).lower() or 'blue side' in str(before.channel.name).lower()):
             print("inside delete category and role")
-            role_category_name = str(before.channel.category.name)
-            role = get(member.guild.roles, name=role_category_name)
-            await member.remove_roles(role)  # if member leaves a match voice channel, remove secret role
+
+            # role_category_name = str(before.channel.category.name)
+            # role = get(member.guild.roles, name=role_category_name)
+            # await member.remove_roles(role)  # if member leaves a match voice channel, remove secret role
 
             channel = before.channel
             if not channel.members:  # delete category and empty voice channels
-                ###############################################################
-                #Call stats.py here#
-                #Stats.get_stats(red,blue)
                 flag = True
                 list_of_category_channels = channel.category.channels
                 for category_channel in list_of_category_channels:
@@ -160,17 +155,50 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                         else:
                             continue
                 if flag:
+                    red, blue, captain_id = await db.get_teams(channel.category.name)
+                    latest_match_stats = Stats.get_stats(red, blue)
+                    embed = get_stats_embed(latest_match_stats, get(member.guild.members, captain.id),
+                                            channel.category.name)
+                    print('Stats description: ', embed.description)
+                    # send match stats to relevant channels during the final touches (ask the customer)
+                    await db.write_stats(latest_match_stats,"monthly-stats")
+                    await db.write_stats(latest_match_stats,"weekly-stats")
+                    await db.write_stats(latest_match_stats,"overall-stats")
+                    await db.write_stats(latest_match_stats,"daily-stats")
+                    
                     for channel in list_of_category_channels:
                         await channel.delete()
                     await channel.category.delete()
+                    await remove_roles(channel.category.name, member.guild, red, blue)
     except:
         print('passing from delete category')
         pass
 
 
-async def get_description(red, blue):
+def get_stats_embed(stats, captain, match_id):
+    embed = discord.Embed(color=random.randint(0, 0xff0000))
+    description = f'**Match ID:** {match_id}\n\n' \
+                  f'**Captain:** {captain.name}\n' \
+                  f'**Winner:** {stats["win"]}\n\n' \
+                  f"**Kill Deaths Assists CreepScore PentaKills QuadraKills**\n"
+    for discord_id in stats:
+        description += f"{stats[discord_id]['kills']} {stats[discord_id]['deaths']} {stats[discord_id]['assists']} {stats[discord_id]['creepScore']} {stats[discord_id]['pentaKills']} {stats[discord_id]['quadraKills']}\n"
+
+    embed.description = description
+    return embed
+
+
+async def remove_roles(category_name, guild, red, blue):
+    role_to_delete = get(guild.roles, name=category_name)
+    for key in red:
+        red[key].remove_roles(role_to_delete)
+        blue[key].remove_roles(role_to_delete)  # remove the role when the channels are empty
+
+
+async def get_description(red, blue, password, match_name, captain_id):
     try:
         description = f"**⚔️Teams and Roles**\n\n" \
+                      f"**Captain:** <!@{captain_id}>\n\n" \
                       f"**🔴 Red Side: **\n" \
                       f"   Top     - <!@{red['top'].id}>\n" \
                       f"   Jungle  - <!@{red['jungle'].id}>\n" \
@@ -183,11 +211,13 @@ async def get_description(red, blue):
                       f"   Mid     - <!@{blue['mid'].id}>\n" \
                       f"   ADC     - <!@{blue['adc'].id}>\n" \
                       f"   Support - <!@{blue['support'].id}>\n\n\n" \
-                      f"*Please don't leave your teams' voice channel till you are done with the match, otherwise you won't be able to join again. If it was a network issue, contact the administrator.*"
+                      f"Match Name: {match_name}" \
+                      f"Password: {password}"
         await get_attention(queue.__len__())
         return description
     except:
-        return "kintama ⚔️🔵🔴"
+        await get_attention(queue.__len__())
+        return "Sample message since we don't have 10 members right now."
 
 
 async def get_attention(no_of_members):
@@ -202,27 +232,43 @@ async def get_attention(no_of_members):
     await channel.send(content='@everyone', embed=embed)
 
 
-def generate_name():
-    name = f"Process247 Lobby | {config['lobby_number']}"
+def generate_name_password():
+    name = f"{config['lobby_name']} | {config['lobby_number']}"
+    password = ''
+    for x in range(11):
+        password += random.choice(string.ascii_letters + string.digits)
     config['lobby_number'] += 1
     with open('config.json', 'w') as file:
         json.dump(config, file)
         file.close()
-    return name
+    return name, password
 
 
 async def create_channels(guild):
-    role_category_name = generate_name()
+    role_category_name, password = generate_name_password()
     category = await guild.create_category(name=role_category_name)
     role = await guild.create_role(name=role_category_name)
     await category.set_permissions(role, read_messages=True, send_messages=True, connect=True, speak=True)
+
     # make category accessible only to people with a specific role which we generate. The name of
     # the category and role must be the same
-    await category.set_permissions(guild.default_role, read_messages=False, connect=False)
-    red = await category.create_voice_channel(name="🔴 • Red Side", bitrate=96000, user_limit=5)
-    blue = await category.create_voice_channel(name="🔵 • Blue Side", bitrate=96000, user_limit=5)
-    text_channel = await category.create_text_channel(name="⚔️ -teams-and-roles")
-    return red, blue, text_channel, role
+
+    # await category.set_permissions(guild.default_role, read_messages=False, connect=False)
+
+    red = await category.create_voice_channel(name=config['vc1'], bitrate=96000, user_limit=5)
+    await red.set_permissions(role, connect=True, speak=True)
+    await red.set_permissions(guild.default_role, connect=False, speak=False)
+
+    blue = await category.create_voice_channel(name=config['vc2'], bitrate=96000, user_limit=5)
+    await blue.set_permissions(role, connect=True, speak=True)
+    await blue.set_permissions(guild.default_role, connect=False, speak=False)
+
+    text_channel = await category.create_text_channel(name=config['tc'])
+    await text_channel.set_permissions(role, read_messages=True, send_messages=True, connect=True, speak=True)
+    await text_channel.set_permissions(guild.default_role, read_messages=False, send_messages=False, connect=False,
+                                       speak=False)
+
+    return red, blue, text_channel, role, password, role_category_name
 
 
 bot.remove_command("help")
