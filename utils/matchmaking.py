@@ -136,6 +136,16 @@ class MatchMaking:
                 print('API Error')
                 break
 
+
+            # try:
+            #
+            # except response.status_code ==:
+            #     if response.text == 429:
+            #         print("Rate limit exceeded retrying....")
+            #         await asyncio.sleep(1)
+            #     else:
+            #         return response
+
     @staticmethod
     def rank_value(rank):
         print('inside rank_value')
