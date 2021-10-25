@@ -69,10 +69,10 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             lobby_channel = member.voice.channel
             queue.push(member)
             no_of_members = len(lobby_channel.members)
-            if no_of_members >= 2:
-                no_of_members -= 2
+            if no_of_members >= 10:
+                no_of_members -= 10
                 list_of_players = list()
-                for i in range(2):
+                for i in range(10):
                     list_of_players.append(queue.pop())
 
                 captain = None
