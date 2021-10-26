@@ -110,7 +110,8 @@ class MatchMaking:
         if len(league_id) > 2 and league_id[1].lower() in 'p247':
             league_id = league_id[2]
         elif len(league_id) > 2:
-            league_id = f'{league_id[1]} {league_id[2]}'
+            league_id.pop(0)
+            league_id = ' '.join(league_id)
         elif len(league_id) > 1:
             league_id = league_id[1]
         else:
