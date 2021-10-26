@@ -107,6 +107,8 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                         captain = list_of_players[random.randint(0, 9)]
 
                 red, blue = matchmakingObj.matchmaker(list_of_players)
+                print('\nRed: ', red)
+                print('\nBlue: ', blue)
                 red_channel, blue_channel, text_channel, role, password, lobby_name = await create_channels(
                     member.guild, after.channel)
                 await db.write_to_db(lobby_name, red, blue, captain.id)     # save the match teams and match id in db
@@ -114,11 +116,12 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                 embed.timestamp = datetime.datetime.now()
                 msg = await text_channel.send(embed=embed)      # send a ⏳ processing embed
                 for key in red:
-                    await red[key].add_roles(role)
-                    await red[key].move_to(red_channel)
+                    print('\nred[key]: ', red[key])
+                    await (red[key]).add_roles(role)
+                    await (red[key]).move_to(red_channel)
                 for key in blue:
-                    await blue[key].add_roles(role)
-                    await blue[key].move_to(blue_channel)
+                    await (blue[key]).add_roles(role)
+                    await (blue[key]).move_to(blue_channel)
                 teams_and_roles_description = await get_description(red, blue, password, role.name, captain.id, after.channel.id)
                 embed.description = teams_and_roles_description
                 await msg.edit(embed=embed)
@@ -155,12 +158,12 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
         # await member.remove_roles(role)  # if member leaves a match voice channel, remove secret role
 
         channel = before.channel
-        if len(channel.members) <= 2:  # delete category and empty voice channels
+        if len(channel.members) <= 2:  # delete category and empty voice channels <= 2
             flag = True
             list_of_category_channels = channel.category.channels
             for category_channel in list_of_category_channels:
                 if category_channel != channel and str(category_channel.type) != "text":
-                    if len(category_channel.members) >= 2:
+                    if len(category_channel.members) >= 2:  # >= 2
                         flag = False
                         break
                     else:
@@ -168,6 +171,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             if flag:
                 red, blue, captain_id = await db.get_teams(channel.category.name)
                 latest_match_stats = await Stats.get_stats(red, blue)
+                print('\nlatest_match_stats: ', latest_match_stats)
                 embed = get_stats_embed(latest_match_stats, get(member.guild.members, id=captain_id),
                                         channel.category.name)
                 print('Stats description: ', embed.description)
@@ -223,29 +227,24 @@ async def remove_roles(category_name, guild, red, blue):
 
 async def get_description(red, blue, password, match_name, captain_id, channel_id_for_queue):
     # queue = queue_dict[channel_id_for_queue]
-    try:
-        description = f"**⚔️Teams and Roles**\n\n" \
-                      f"**Captain:** <!@{captain_id}>\n\n" \
-                      f"**🔴 Red Side: **\n" \
-                      f"   Top     - <!@{red['top'].id}>\n" \
-                      f"   Jungle  - <!@{red['jungle'].id}>\n" \
-                      f"   Mid     - <!@{red['mid'].id}>\n" \
-                      f"   ADC     - <!@{red['adc'].id}>\n" \
-                      f"   Support - <!@{red['support'].id}>\n\n" \
-                      f"**🔵 Blue: **\n" \
-                      f"   Top     - <!@{blue['top'].id}>\n" \
-                      f"   Jungle  - <!@{blue['jungle'].id}>\n" \
-                      f"   Mid     - <!@{blue['mid'].id}>\n" \
-                      f"   ADC     - <!@{blue['adc'].id}>\n" \
-                      f"   Support - <!@{blue['support'].id}>\n\n\n" \
-                      f"Match Name: {match_name}" \
-                      f"Password: {password}"
-        await get_attention()
-        return description
-    except:
-        await get_attention()
-        return "Sample message since we don't have 10 members right now."
-
+    description = f"**⚔️Teams and Roles**\n\n" \
+                  f"**Captain:** <!@{captain_id}>\n\n" \
+                  f"**🔴 Red Side: **\n" \
+                  f"   Top     - <!@{red['top'].id}>\n" \
+                  f"   Jungle  - <!@{red['jungle'].id}>\n" \
+                  f"   Mid     - <!@{red['mid'].id}>\n" \
+                  f"   ADC     - <!@{red['adc'].id}>\n" \
+                  f"   Support - <!@{red['support'].id}>\n\n" \
+                  f"**🔵 Blue: **\n" \
+                  f"   Top     - <!@{blue['top'].id}>\n" \
+                  f"   Jungle  - <!@{blue['jungle'].id}>\n" \
+                  f"   Mid     - <!@{blue['mid'].id}>\n" \
+                  f"   ADC     - <!@{blue['adc'].id}>\n" \
+                  f"   Support - <!@{blue['support'].id}>\n\n\n" \
+                  f"Match Name: {match_name}" \
+                  f"Password: {password}"
+    await get_attention()
+    return description
 
 async def get_attention():
     get_attention_channel = config['channel_ids']['get_attention_channel_id']
