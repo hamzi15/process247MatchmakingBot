@@ -1,5 +1,7 @@
 import codecs
 import pickle
+import dill
+import weakref
 
 import json
 import os
@@ -10,7 +12,7 @@ import psycopg2
 if not os.path.isfile("config.json"):
     sys.exit("'config.json' not found! Add it and try again.")
 else:
-    with open("config.json") as file:
+    with open("config.json", encoding="cp866") as file:
         config = json.load(file)
 
 
@@ -19,10 +21,6 @@ class dbAction:
         self.db = psycopg2.connect(host=config["database_creds"]["host"], database=config["database_creds"]["database"],
                                    user=config["database_creds"]["user"], port=config["database_creds"]["port"],
                                    password=config["database_creds"]["password"])
-
-    async def write_lb_stats(self, member_summoner_id):
-        # fetch stats here and write them to the database
-        pass
 
     def check_user(self, discord_id, table):
         cur = self.db.cursor()
@@ -112,22 +110,23 @@ class dbAction:
 
     async def write_to_db(self, lobby_name, red, blue, captain):
         cur = self.db.cursor()
-        cur.execute(f"INSERT INTO team_db (match_name, red_team, blue_team, captain) values ('{lobby_name}', '{self.pickled(red)}', '{self.pickled(blue)}', {self.pickled(captain)});")
+        cur.execute(f"INSERT INTO team_db (match_name, red_team, blue_team, captain) values ('{lobby_name}', '{self.pickled(list(red))}', '{self.pickled(list(blue))}', {captain});")
         self.db.commit()
         cur.close()
 
     @staticmethod
     def pickled(obj):
-        return codecs.encode(pickle.dumps(obj), "base64").decode()
+        return codecs.encode(dill.dumps(obj), "base64").decode()
 
     @staticmethod
     def unpickled(pickled):
-        return pickle.loads(codecs.decode(pickled.encode(), "base64"))
+        return dill.loads(codecs.decode(pickled.encode(), "base64"))
 
     async def get_teams(self, lobby_name):
         cur = self.db.cursor()
         cur.execute(f"SELECT * FROM team_db WHERE match_name='{lobby_name}';")
         lst = cur.fetchone()
         return self.unpickled(lst[1]), self.unpickled(lst[-1]), int(lst[2])
+
 
     # def delete_match(self, lobby_name):
