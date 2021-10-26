@@ -1,11 +1,9 @@
 import codecs
-import copy
 import pickle
 
 import json
 import os
 import sys
-from discord import Client
 
 import psycopg2
 
@@ -129,13 +127,6 @@ class dbAction:
     @staticmethod
     def unpickled(pickled):
         return pickle.loads(codecs.decode(pickled.encode(), "base64"))
-
-    @staticmethod
-    def add_member_objs(team):
-        client = Client()
-        for rank in team:
-            team[rank] = client.get_user(team[rank])
-        return team
 
     async def get_teams(self, lobby_name):
         cur = self.db.cursor()
