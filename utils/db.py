@@ -1,4 +1,5 @@
 import codecs
+import copy
 import pickle
 
 import json
@@ -25,7 +26,6 @@ class dbAction:
         cur = self.db.cursor()
         cur.execute(f"SELECT discord_id FROM {table};")
         list_of_discord_ids = cur.fetchall()
-        print(list_of_discord_ids)
         if discord_id in list_of_discord_ids:
             return True
         return False
@@ -109,15 +109,16 @@ class dbAction:
 
     @staticmethod
     def remove_member_objs(team):
+        dict = {}
         for key in team:
-            team[key] = team[key].id
-        return team
+            dict[key] = team[key].id
+        return dict
 
     async def write_to_db(self, lobby_name, red, blue, captain):
         cur = self.db.cursor()
-        red = self.remove_member_objs(red)
-        blue = self.remove_member_objs(blue)
-        cur.execute(f"INSERT INTO team_db (match_name, red_team, blue_team, captain) values ('{lobby_name}', '{self.pickled(red)}', '{self.pickled(blue)}', {captain});")
+        red1 = self.remove_member_objs(red)
+        blue1 = self.remove_member_objs(blue)
+        cur.execute(f"INSERT INTO team_db (match_name, red_team, blue_team, captain) values ('{lobby_name}', '{self.pickled(red1)}', '{self.pickled(blue1)}', {captain});")
         self.db.commit()
         cur.close()
 
