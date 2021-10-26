@@ -99,8 +99,12 @@ class Stats:
     async def fetch_puuid(member):
         API_KEY = config['RIOT_API_KEY']
         league_id = re.split('[ ]', member.display_name)
-        if len(league_id) > 1:
-            league_id = f"{league_id[1]} {league_id[2]}"
+        if len(league_id) > 2 and league_id[1].lower() in 'p247':
+            league_id = league_id[2]
+        elif len(league_id) > 2:
+            league_id = f'{league_id[1]} {league_id[2]}'
+        elif len(league_id) > 1:
+            league_id = league_id[1]
         else:
             league_id = league_id[0]
 
