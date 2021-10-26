@@ -18,7 +18,7 @@ else:
 class Stats:
     lol_roles = ['Top', 'Jungle', 'Mid', 'Adc', 'Support']
 
-# make a method for fetching a member's match stats so we can add it to the database
+    # make a method for fetching a member's match stats so we can add it to the database
 
     @staticmethod
     async def get_stats(red, blue):
@@ -40,7 +40,7 @@ class Stats:
             response = await Stats.fetch_match_ids(puuid)
             if response:
                 matchIdlst.append(response[0])
-
+        print('\nMatch Id List:',matchIdlst)
         # Getting most common match id
         matchId = Stats.Most_Common(matchIdlst)
         print('\nmatchId: ', matchId)
@@ -57,8 +57,10 @@ class Stats:
             print('inside get_stats, for loop')
             participant = info_participants[index]
             puuid = metadata_participants[index]
-            discord_id = puuid_dict[puuid].id        # discord_id
-
+            try:
+                discord_id = puuid_dict[puuid].id        # discord_id
+            except:
+                print("Puuid not found.")
             # win, kills, deaths, assists, doubleKills, tripleKills, quadraKills, pentaKills
             try:
                 creepScorePerMin = participant["totalMinionsKilled"] / (participant["timePlayed"] / 60)
