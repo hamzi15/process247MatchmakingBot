@@ -1,11 +1,10 @@
 import codecs
 import pickle
-import dill
-import weakref
 
 import json
 import os
 import sys
+from discord import Client
 
 import psycopg2
 
@@ -108,25 +107,42 @@ class dbAction:
     #                              }
     #     return stats
 
+    @staticmethod
+    def remove_member_objs(team):
+        for key in team:
+            team[key] = team[key].id
+        return team
+
     async def write_to_db(self, lobby_name, red, blue, captain):
         cur = self.db.cursor()
-        cur.execute(f"INSERT INTO team_db (match_name, red_team, blue_team, captain) values ('{lobby_name}', '{self.pickled(list(red))}', '{self.pickled(list(blue))}', {captain});")
+        red = self.remove_member_objs(red)
+        blue = self.remove_member_objs(blue)
+        cur.execute(f"INSERT INTO team_db (match_name, red_team, blue_team, captain) values ('{lobby_name}', '{self.pickled(red)}', '{self.pickled(blue)}', {captain});")
         self.db.commit()
         cur.close()
 
     @staticmethod
     def pickled(obj):
-        return codecs.encode(dill.dumps(obj), "base64").decode()
+        return codecs.encode(pickle.dumps(obj), "base64").decode()
 
     @staticmethod
     def unpickled(pickled):
-        return dill.loads(codecs.decode(pickled.encode(), "base64"))
+        return pickle.loads(codecs.decode(pickled.encode(), "base64"))
+
+    @staticmethod
+    def add_member_objs(team):
+        client = Client()
+        for rank in team:
+            team[rank] = client.get_user(team[rank])
+        return team
 
     async def get_teams(self, lobby_name):
         cur = self.db.cursor()
         cur.execute(f"SELECT * FROM team_db WHERE match_name='{lobby_name}';")
         lst = cur.fetchone()
-        return self.unpickled(lst[1]), self.unpickled(lst[-1]), int(lst[2])
-
+        red = self.add_member_objs(self.unpickled(lst[1]))
+        blue = self.add_member_objs(self.unpickled(self.unpickled(lst[-1])))
+        captain_id = int(lst[2])
+        return red, blue, captain_id
 
     # def delete_match(self, lobby_name):
