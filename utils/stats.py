@@ -22,6 +22,7 @@ class Stats:
 
     @staticmethod
     async def get_stats(red, blue):
+        print('inside get_stats, stats.py')
         red_members = []
         blue_members = []
         for role in Stats.lol_roles:
@@ -42,26 +43,35 @@ class Stats:
 
         # Getting most common match id
         matchId = Stats.Most_Common(matchIdlst)
-
+        print('\nmatchId: ', matchId)
         response = await Stats.fetch_match_data(matchId)
         metadata_participants = response.json()['metadata']['participants']
+        print('\nmetadata_participants: ', metadata_participants)
         info_participants = response.json()['info']['participants']
-        # {discordid: [Champion_name,win,kills,deaths,assists,CreepScore????,doublekills,triplekills,quadrakills,pentakills,totalDamageDealt,totalDamageTaken]}
+
+        # {discordid: [Champion_name, win, kills, deaths, assists, CreepScore????, doublekills, triplekills,
+        # quadrakills, pentakills, totalDamageDealt, totalDamageTaken]}
+
         stats = {}
         for index in range(len(info_participants)):
+            print('inside get_stats, for loop')
             participant = info_participants[index]
             puuid = metadata_participants[index]
-            discordid = puuid_dict[puuid].id        # discordid
+            discord_id = puuid_dict[puuid].id        # discord_id
 
             # win, kills, deaths, assists, doubleKills, tripleKills, quadraKills, pentaKills
-            creepScorePerMin = participant["totalMinionsKilled"] / (participant["timePlayed"] / 60)
+            try:
+                creepScorePerMin = participant["totalMinionsKilled"] / (participant["timePlayed"] / 60)
+            except ZeroDivisionError:
+                creepScorePerMin = 0
             statslst = {"win": participant["win"], "kills": participant["kills"], "deaths": participant["deaths"],
                         "assists": participant["assists"], 'creepScore': creepScorePerMin,
                         "totalMinionsKilled": participant["totalMinionsKilled"], "timePlayed":(participant["timePlayed"]/60),
                         "tripleKills": participant["tripleKills"],"quadraKills": participant["quadraKills"],
                         "pentaKills": participant["pentaKills"], "totalDamageDealt": participant["totalDamageDealt"],
                         "totalDamageTaken": participant["totalDamageTaken"]}
-            stats[discordid] = statslst
+            stats[discord_id] = statslst
+        print('stats list: ', stats)
         return stats
 
     @staticmethod
@@ -94,6 +104,8 @@ class Stats:
                 f"https://{region}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start=0&count={no_of_matches}&api_key={API_KEY}")
             if response.status_code == 200:
                 return response.json()
+            elif response.status_code != 200:
+                return False
 
     @staticmethod
     async def fetch_puuid(member):
@@ -102,7 +114,8 @@ class Stats:
         if len(league_id) > 2 and league_id[1].lower() in 'p247':
             league_id = league_id[2]
         elif len(league_id) > 2:
-            league_id = f'{league_id[1]} {league_id[2]}'
+            league_id.pop(0)
+            league_id = ' '.join(league_id)
         elif len(league_id) > 1:
             league_id = league_id[1]
         else:
