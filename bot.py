@@ -103,8 +103,8 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                             matchmakingObj.dict_of_players[member][0] = MatchMaking.rank_value(response)
                             if not captain:
                                 captain = member
-                    if not captain:
-                        captain = list_of_players[random.randint(0, 9)]
+                if not captain:
+                    captain = list_of_players[random.randint(0, 9)]
 
                 red, blue = matchmakingObj.matchmaker(list_of_players)
                 print('\nRed: ', red)
@@ -163,7 +163,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             list_of_category_channels = channel.category.channels
             for category_channel in list_of_category_channels:
                 if category_channel != channel and str(category_channel.type) != "text":
-                    if len(category_channel.members) >= 2:  # >= 2
+                    if len(category_channel.members) > 2:  # >= 2
                         flag = False
                         break
                     else:
@@ -172,21 +172,28 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                 red, blue, captain_id = await db.get_teams(channel.category.name)
                 red = add_member_obj(red)
                 blue = add_member_obj(blue)
-                latest_match_stats = await Stats.get_stats(red, blue)
-                print('\nlatest_match_stats: ', latest_match_stats)
-                embed = get_stats_embed(latest_match_stats, get(member.guild.members, id=captain_id),
-                                        channel.category.name)
-                print('Stats description: ', embed.description)
-                # send match stats to match history channels
-                await db.write_stats(latest_match_stats, "monthly_lb")
-                await db.write_stats(latest_match_stats, "weekly_lb")
-                await db.write_stats(latest_match_stats, "overall_lb")
-                await db.write_stats(latest_match_stats, "daily_lb")
 
+                try:
+                    latest_match_stats = await Stats.get_stats(red, blue)
+                    print('\nlatest_match_stats: ', latest_match_stats)
+                    embed = get_stats_embed(latest_match_stats, get(member.guild.members, id=captain_id),
+                                            channel.category.name)
+                    print('Stats description: ', embed.description)
+                    # send match stats to match history channels
+                    await db.write_stats(latest_match_stats, "monthly_lb")
+                    await db.write_stats(latest_match_stats, "weekly_lb")
+                    await db.write_stats(latest_match_stats, "overall_lb")
+                    await db.write_stats(latest_match_stats, "daily_lb")
+                except:
+                    print('passing from db.write_stats')
+                    pass
+
+                await remove_roles(channel.category.name, member.guild, red, blue)
                 for channel in list_of_category_channels:
                     await channel.delete()
+                    print(f'\ndeleting {channel.name}')
                 await channel.category.delete()
-                await remove_roles(channel.category.name, member.guild, red, blue)
+                print(f'\ndeleting {channel.category.name}')
                 print('deleted category and removed roles')
 
     # try:
@@ -210,10 +217,11 @@ def get_stats_embed(stats, captain, match_id):
     # f'**Winner:** {stats["win"]}\n\n' \
     for discord_id in stats:
         league_id = re.split('[ ]', bot.get_user(discord_id).display_name)
-        if len(league_id) > 2 and league_id[1].lower() in 'p247':
+        if len(league_id) > 2 and 'p247' in league_id[1].lower():
             league_id = league_id[2]
         elif len(league_id) > 2:
-            league_id = f'{league_id[1]} {league_id[2]}'
+            league_id.pop(0)
+            league_id = ' '.join(league_id)
         elif len(league_id) > 1:
             league_id = league_id[1]
         else:
@@ -226,30 +234,32 @@ def get_stats_embed(stats, captain, match_id):
 
 
 async def remove_roles(category_name, guild, red, blue):
+    print('\ninside remove_roles')
     role_to_delete = get(guild.roles, name=category_name)
     for key in red:
-        red[key].remove_roles(role_to_delete)
-        blue[key].remove_roles(role_to_delete)  # remove the role when the channels are empty
+        await red[key].remove_roles(role_to_delete)
+        await blue[key].remove_roles(role_to_delete)  # remove the role when the channels are empty
 
 
 async def get_description(red, blue, password, match_name, captain_id):
     # queue = queue_dict[channel_id_for_queue]
     description = f"**⚔️Teams and Roles**\n\n" \
-                  f"**Captain:** <!@{captain_id}>\n\n" \
-                  f"**🔴 Red Side: **\n" \
-                  f"   Top     - <!@{red['Top'].id}>\n" \
-                  f"   Jungle  - <!@{red['Jungle'].id}>\n" \
-                  f"   Mid     - <!@{red['Mid'].id}>\n" \
-                  f"   ADC     - <!@{red['Adc'].id}>\n" \
-                  f"   Support - <!@{red['Support'].id}>\n\n" \
-                  f"**🔵 Blue: **\n" \
-                  f"   Top     - <!@{blue['Top'].id}>\n" \
-                  f"   Jungle  - <!@{blue['Jungle'].id}>\n" \
-                  f"   Mid     - <!@{blue['Mid'].id}>\n" \
-                  f"   ADC     - <!@{blue['Adc'].id}>\n" \
-                  f"   Support - <!@{blue['Support'].id}>\n\n\n" \
-                  f"Match Name: {match_name}" \
-                  f"Password: {password}"
+                  f"**Captain:** <@!{captain_id}>\n\n" \
+                  f"**🔴 Red Team: **\n" \
+                  f"   **Top     -** <@!{red['Top'].id}>\n" \
+                  f"   **Jungle  -** <@!{red['Jungle'].id}>\n" \
+                  f"   **Mid     -** <@!{red['Mid'].id}>\n" \
+                  f"   **ADC     -** <@!{red['Adc'].id}>\n" \
+                  f"   **Support -** <@!{red['Support'].id}>\n\n" \
+                  f"**🔵 Blue Team: **\n" \
+                  f"   **Top     -** <@!{blue['Top'].id}>\n" \
+                  f"   **Jungle  -** <@!{blue['Jungle'].id}>\n" \
+                  f"   **Mid     -** <@!{blue['Mid'].id}>\n" \
+                  f"   **ADC     -** <@!{blue['Adc'].id}>\n" \
+                  f"   **Support -** <@!{blue['Support'].id}>\n\n\n" \
+                  f"**Lobby Name:**     {match_name}\n" \
+                  f"**Password:**       {password}\n\n" \
+                  f"*<@!{captain_id}> is incharge of creating the lobby. Please use the above `Lobby Name` and `Password`.*"
     await get_attention()
     return description
 
