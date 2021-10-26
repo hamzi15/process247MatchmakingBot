@@ -141,7 +141,7 @@ class dbAction:
         cur.execute(f"SELECT * FROM team_db WHERE match_name='{lobby_name}';")
         lst = cur.fetchone()
         red = self.add_member_objs(self.unpickled(lst[1]))
-        blue = self.add_member_objs(self.unpickled(self.unpickled(lst[-1])))
+        blue = self.add_member_objs(self.unpickled(lst[-1]))
         captain_id = int(lst[2])
         return red, blue, captain_id
 
