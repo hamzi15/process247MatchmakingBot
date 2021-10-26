@@ -9,7 +9,7 @@ from collections import Counter
 if not os.path.isfile("config.json"):
     sys.exit("'config.json' not found! Add it and try again.")
 else:
-    with open("config.json") as file:
+    with open("config.json", encoding="cp866") as file:
         config = json.load(file)
 
 
@@ -21,7 +21,7 @@ class Stats:
 # make a method for fetching a member's match stats so we can add it to the database
 
     @staticmethod
-    def get_stats(red, blue):
+    async def get_stats(red, blue):
         red_members = []
         blue_members = []
         for role in Stats.lol_roles:
@@ -36,14 +36,14 @@ class Stats:
 
         matchIdlst = []
         for puuid in puuid_dict:
-            response = Stats.fetch_match_ids(puuid)
+            response = await Stats.fetch_match_ids(puuid)
             if response:
                 matchIdlst.append(response[0])
 
         # Getting most common match id
         matchId = Stats.Most_Common(matchIdlst)
 
-        response = Stats.fetch_match_data(matchId)
+        response = await Stats.fetch_match_data(matchId)
         metadata_participants = response.json()['metadata']['participants']
         info_participants = response.json()['info']['participants']
         # {discordid: [Champion_name,win,kills,deaths,assists,CreepScore????,doublekills,triplekills,quadrakills,pentakills,totalDamageDealt,totalDamageTaken]}
@@ -75,7 +75,7 @@ class Stats:
         return max(lst, key=data.get)
 
     @staticmethod
-    def fetch_match_data(matchId):
+    async def fetch_match_data(matchId):
         API_KEY = config['RIOT_API_KEY']
         region = "americas"
         for i in range(3):
@@ -85,7 +85,7 @@ class Stats:
                 return response
 
     @staticmethod
-    def fetch_match_ids(puuid):
+    async def fetch_match_ids(puuid):
         API_KEY = config['RIOT_API_KEY']
         region = "americas"
         no_of_matches = 1
@@ -96,7 +96,7 @@ class Stats:
                 return response.json()
 
     @staticmethod
-    def fetch_puuid(member):
+    async def fetch_puuid(member):
         API_KEY = config['RIOT_API_KEY']
         league_id = re.split('[ ]', member.display_name)
         if len(league_id) > 1:
@@ -119,4 +119,3 @@ class Stats:
             elif response.status_code in [400, 401, 403, 405, 500, 502]:
                 print('API Error')
                 break
-
