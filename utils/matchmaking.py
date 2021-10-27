@@ -18,14 +18,14 @@ class MatchMaking:
         self.dict_of_players = {}
         self.ranks = ['challenger', 'grandmaster', 'master', 'plat', 'platinum', 'gold', 'silver', 'bronze', 'iron']
 
-    def prepare_roles_ranks(self, lst_of_memberObjs):
-        print('inside prepare_roles_ranks')
+    def prepare_roles(self, lst_of_memberObjs):
+        print('inside prepare_roles')
         no_rank_members = []
         for member in lst_of_memberObjs:
             lol_roles = ['Top', 'Jungle', 'Mid', 'Adc', 'Support']
             no_of_roles = 2  # some people have more than two roles so we ignore the extra roles
-            found_rank_flag = False
-            self.dict_of_players[member] = ['Rank_goes_here', 'Primary_role']
+            found_rank_flag = False         #mmr,#Primary,#Secondary
+            self.dict_of_players[member] = ["mmr","Primary","Secondary"]
             for role in member.roles:
                 if no_of_roles:
                     if role.name.startswith('Mains '):
@@ -37,20 +37,12 @@ class MatchMaking:
 
                     if role.name.lower() in lol_roles:
                         secondary_role = role.name
-                        self.dict_of_players[member].append(secondary_role)
+                        self.dict_of_players[member][2] = secondary_role
                         no_of_roles -= 1
-
-                if role.name.lower() in self.ranks:  # searching for rank in member roles
-                    rank = role.name.lower()
-                    found_rank_flag = True
-                    self.dict_of_players[member][0] = MatchMaking.rank_value(rank)
-
-            if not found_rank_flag:  # if rank not found in roles THEN fetch from API endpoint
-                no_rank_members.append(member)
-        return no_rank_members
+        return
 
     def matchmaker(self, lst_of_memberObjs):
-        print('inside matchmaker')
+
         self.bubbleSort(lst_of_memberObjs)
         # matchmaking starts here then make two lists of players
         # also put a check if a player has no rank then give them diamond rank
@@ -110,8 +102,7 @@ class MatchMaking:
         if len(league_id) > 2 and league_id[1].lower() in 'p247':
             league_id = league_id[2]
         elif len(league_id) > 2:
-            league_id.pop(0)
-            league_id = ' '.join(league_id)
+            league_id = f'{league_id[1]} {league_id[2]}'
         elif len(league_id) > 1:
             league_id = league_id[1]
         else:
@@ -125,13 +116,9 @@ class MatchMaking:
             print('fetch_rank status code: ', response.status_code)
             if response.status_code == 200:
                 summoner_id = response.json()['id']
-                rank_stats = requests.get(
+                summoner_stats = requests.get(
                     f'https://{league_region}.api.riotgames.com/lol/league/v4/entries/by-summoner/{summoner_id}?api_key={API_KEY}').json()
-                if rank_stats:
-                    rank = rank_stats[0]['tier']
-                else:
-                    rank = 'unranked'
-                return rank
+                return summoner_stats
             elif response.status_code == 404:
                 return False
             elif response.status_code == 429 or response.status_code == 503 or response.status_code == 504:
@@ -153,27 +140,96 @@ class MatchMaking:
             #         return response
 
     @staticmethod
-    def rank_value(rank):
+    def player_valuation(tier, rank, wins, loses, lp):
+        totalMatches = wins +loses
+        if totalMatches < 50:
+            return False
+        WinRate = (wins/totalMatches)*100 #Percentage winrate
+        mmr = int
         print('inside rank_value')
-        rank = rank.lower()
-        if rank == 'challenger':
-            return 9
-        elif rank == 'grandmaster':
-            return 8
-        elif rank == 'master':
-            return 7
-        elif rank == 'plat':
-            return 5
-        elif rank == 'gold':
-            return 4
-        elif rank == 'silver':
-            return 3
-        elif rank == 'bronze':
-            return 2
-        elif rank == 'iron':
-            return 1
-        else:  # diamond or unranked
-            return 6
+        tier = tier.lower()
+        rank_precedence = ["iron IV","iron III","iron II", "iron I",
+                           "bronze IV", "bronze III", "bronze II","bronze I",
+                           "silver IV","silver III","silver II","silver I",
+                           "gold IV","gold III","gold II","gold I",
+                           "platinum IV", "platinum III","platinum II", "platinum I",
+                           "diamond IV", "diamond III","diamond II", "diamond I","master I"]
+        tier_rank = f"{tier} {rank}"
+        if WinRate >= 55:
+            if tier_rank in rank_precedence and rank_precedence.index(tier_rank) < 22:
+                index = 0
+                for prec in rank_precedence:
+                    if tier_rank == prec:
+                        index = rank_precedence.index(prec)
+                if WinRate < 65:
+                    tier_rank = rank_precedence[index + 1]
+                elif WinRate < 75:
+                    tier_rank = rank_precedence[index + 2]
+                else:
+                    tier_rank = rank_precedence[index +3]
+
+        tier, rank = tier_rank.split()[0],tier_rank.split()[1]
+
+        if tier == "iron":
+            if rank == "III":
+                mmr = 1.25
+            elif rank == "II":
+                mmr = 1.5
+            elif rank == "I":
+                mmr = 2
+            else:
+                mmr = 1
+        elif tier == "bronze":
+            if rank == "III":
+                mmr = 2.25
+            elif rank == "II":
+                mmr = 2.5
+            elif rank == "I":
+                mmr = 3
+            else:
+                mmr = 2
+        elif tier == "silver":
+            if rank == "III":
+                mmr = 4.25
+            elif rank == "II":
+                mmr = 4.5
+            elif rank == "I":
+                mmr = 5
+            else:
+                mmr = 4
+        elif tier == "gold":
+            if rank == "III":
+                mmr = 5.5
+            elif rank == "II":
+                mmr = 6
+            elif rank == "I":
+                mmr = 7
+            else:
+                mmr = 5
+        elif tier == "platinum":
+            if rank == "III":
+                mmr = 9
+            elif rank == "II":
+                mmr = 10
+            elif rank == "I":
+                mmr = 12
+            else:
+                mmr = 8
+        elif tier == "diamond":
+            if rank == "III":
+                mmr = 15
+            elif rank == "II":
+                mmr = 17
+            elif rank == "I":
+                mmr = 21
+            else:
+                mmr = 13
+        elif tier == "master" or tier == "grand master" or tier == " challenger":
+            mmr = 22
+            lpValue = (int(lp/100))*2
+            mmr += lpValue
+
+        return mmr
 
     def bubbleSort(self, arr):
         print('inside bubbleSort')
@@ -182,3 +238,4 @@ class MatchMaking:
             for j in range(0, n - i - 1):
                 if self.dict_of_players[arr[j]][0] < self.dict_of_players[arr[j + 1]][0]:
                     arr[j], arr[j + 1] = arr[j + 1], arr[j]
+
