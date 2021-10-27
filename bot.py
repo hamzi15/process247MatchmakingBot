@@ -109,7 +109,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                             #Unranked Player has to be removed
                             pass
                         else:
-                            ans = MatchMaking.rank_value(tier,rank,wins,losses,lp)
+                            ans = MatchMaking.player_valuation(tier,rank,wins,losses,lp)
                             if not ans:
                                 #Player has played less than 50 matches in total has to removed
                                 pass
