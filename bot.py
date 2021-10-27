@@ -93,11 +93,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                         #Players league id is not in name has to be removed
                         pass
                     else:
-                        tier = None
-                        rank = None
-                        wins = None
-                        losses = None
-                        lp = None
+                        tier, rank , wins ,losses, lp = None, None, None, None ,None
                         for info in response:
                             if info['queueType'] == "RANKED SOLO 5x5":
                                 tier = info['tier']
