@@ -75,7 +75,9 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             lobby_channel = member.voice.channel
             queue = queue_dict[after.channel.id]  # get the relevant queue from queue dict
             queue.push(member)
+            print("Queue:",queue.lst)
             no_of_members = len(lobby_channel.members)
+            print("no_of_members:",no_of_members)
             if no_of_members >= 10:
                 no_of_members -= 10
                 list_of_players = list()
@@ -84,27 +86,36 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 
                 captain = None
 
-                no_rank_members = matchmakingObj.prepare_roles_ranks(list_of_players)
-                print('no_rank_members: ', no_rank_members)
-                if no_rank_members:
-                    for member in no_rank_members:
-                        response = await MatchMaking.fetch_rank(member)
-                        if not response:
-                            # League ID does not exist need to remove member from lobby.
-                            list_of_players.remove(member)
-                            for player in list_of_players:
-                                queue.push(player)
-                            await member.move_to(get(member.guild.channels, id=797704589305577488))
-                            await member.send(embed=discord.Embed(color=0xff000,
-                                                                  description="*We couldn't find you in LoL database. If you are registered with LoL then please add your summoner name in your server nickname, i.e. '[ADA] Goldfish'. AND register with Orianna Bot in the server.\nOR\nMention `@Tech Support` in the technical issues channel.*"))
-                            print(f'removed {member.name} from lobby for not having summoner name')
-                            return
+                matchmakingObj.prepare_roles(list_of_players)
+                for member in list_of_players:
+                    response = await matchmakingObj.fetch_rank(member)
+                    if not response:
+                        #Players league id is not in name has to be removed
+                        pass
+                    else:
+                        tier = None
+                        rank = None
+                        wins = None
+                        losses = None
+                        lp = None
+                        for info in response:
+                            if info['queueType'] == "RANKED SOLO 5x5":
+                                tier = info['tier']
+                                rank = info['rank']
+                                wins = info["wins"]
+                                losses = info["losses"]
+                                lp = info["leaguePoints"]
+                        if not tier:
+                            #Unranked Player has to be removed
+                            pass
                         else:
-                            matchmakingObj.dict_of_players[member][0] = MatchMaking.rank_value(response)
-                            if not captain:
-                                captain = member
-                if not captain:
-                    captain = list_of_players[random.randint(0, 9)]
+                            ans = MatchMaking.rank_value(tier,rank,wins,losses,lp)
+                            if not ans:
+                                #Player has played less than 50 matches in total has to removed
+                                pass
+                            else:
+                                matchmakingObj.dict_of_players[member][0] = ans
+                                #If code gets to here for all players then call .matchmaker function
 
                 red, blue = matchmakingObj.matchmaker(list_of_players)
                 print('\nRed: ', red)
@@ -375,4 +386,3 @@ async def on_command_error(context, error):
 
 
 bot.run(config["token"])
-
