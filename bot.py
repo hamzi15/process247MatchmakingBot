@@ -95,7 +95,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                     else:
                         tier, rank , wins ,losses, lp = None, None, None, None ,None
                         for info in response:
-                            if info['queueType'] == "RANKED SOLO 5x5":
+                            if info['queueType'] == "RANKED_SOLO_5x5":
                                 tier = info['tier']
                                 rank = info['rank']
                                 wins = info["wins"]
