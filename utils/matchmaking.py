@@ -18,28 +18,6 @@ class MatchMaking:
         self.dict_of_players = {}
         self.ranks = ['challenger', 'grandmaster', 'master', 'plat', 'platinum', 'gold', 'silver', 'bronze', 'iron']
 
-    def prepare_roles(self, lst_of_memberObjs):
-        print('inside prepare_roles')
-        no_rank_members = []
-        for member in lst_of_memberObjs:
-            lol_roles = ['Top', 'Jungle', 'Mid', 'Adc', 'Support']
-            no_of_roles = 2  # some people have more than two roles so we ignore the extra roles
-            found_rank_flag = False         #mmr,#Primary,#Secondary
-            self.dict_of_players[member] = ["mmr","Primary","Secondary"]
-            for role in member.roles:
-                if no_of_roles:
-                    if role.name.startswith('Mains '):
-                        # 'Mains' is the primary role
-                        primary_role = (role.name.split())[1]
-                        if primary_role in lol_roles:
-                            self.dict_of_players[member][1] = primary_role
-                            no_of_roles -= 1
-
-                    if role.name.lower() in lol_roles:
-                        secondary_role = role.name
-                        self.dict_of_players[member][2] = secondary_role
-                        no_of_roles -= 1
-        return
 
     def matchmaker(self, lst_of_memberObjs):
 
@@ -101,8 +79,9 @@ class MatchMaking:
         league_id = re.split('[ ]', member.display_name)
         if len(league_id) > 2 and league_id[1].lower() in 'p247':
             league_id = league_id[2]
-        elif len(league_id) > 2:
-            league_id = f'{league_id[1]} {league_id[2]}'
+        elif len(league_id) >= 2:
+            league_id.pop(0)
+            league_id = " ".join(league_id)
         elif len(league_id) > 1:
             league_id = league_id[1]
         else:
@@ -169,7 +148,6 @@ class MatchMaking:
                     tier_rank = rank_precedence[index +3]
 
         tier, rank = tier_rank.split()[0],tier_rank.split()[1]
-
         if tier == "iron":
             if rank == "III":
                 mmr = 1.25
@@ -224,7 +202,7 @@ class MatchMaking:
                 mmr = 21
             else:
                 mmr = 13
-        elif tier == "master" or tier == "grand master" or tier == " challenger":
+        elif tier == "master" or tier == "grandmaster" or tier == " challenger":
             mmr = 22
             lpValue = (int(lp/100))*2
             mmr += lpValue
@@ -232,10 +210,8 @@ class MatchMaking:
         return mmr
 
     def bubbleSort(self, arr):
-        print('inside bubbleSort')
         n = len(arr)
         for i in range(n):
             for j in range(0, n - i - 1):
                 if self.dict_of_players[arr[j]][0] < self.dict_of_players[arr[j + 1]][0]:
                     arr[j], arr[j + 1] = arr[j + 1], arr[j]
-
