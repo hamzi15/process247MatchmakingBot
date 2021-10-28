@@ -70,9 +70,9 @@ async def update_cache_rank_valuation():
 async def update_cache_roles():
     all_server_members = bot.get_all_members()
     for member in all_server_members:
-        retrived_roles = set_roles(member)
-        config["cache"][member.id]["primary_role"] = retrived_roles[0] #Can be "primary"
-        config["cache"][member.id]["secondary_role"] = retrived_roles[1] #Can be "secondary"
+        retrieved_roles = set_roles(member)
+        config["cache"][member.id]["primary_role"] = retrieved_roles[0] #Can be "primary"
+        config["cache"][member.id]["secondary_role"] = retrieved_roles[1] #Can be "secondary"
     with open('config.json', 'w') as file:
         json.dump(config, file, indent=4)
         file.close()
@@ -214,18 +214,23 @@ async def on_voice_channel_connect(member, channel):
                     with open('config.json', 'w') as file:
                         json.dump(config, file, indent=4)
                         file.close()
-
-                if type(rank_valuation) != int:
-                    #Could recheck api here
-                    not_eligible_members.append(member)
-                else:
+                check = True
+                if type(rank_valuation) != int:                 #First rank_value check
+                    rank_valuation = await fetch_info(member)   #Check API again to reconfirm eligibilty
+                    if type(rank_valuation) != int:
+                        check = False
+                        not_eligible_members.append(member)    #Add to non eligibilty list after second test
+                    else:
+                        #check = True
+                        config["cache"][member.id]["rank_valuation"] = rank_valuation   #Otherwise update rank value
+                if check:
                     player_info = [rank_valuation, config["cache"][member.id]["primary_role"], config["cache"][member.id]["secondary_role"]]
                     matchmakingObj.dict_of_players[member] = player_info
 
             if not_eligible_members:
                 for member in not_eligible_members:
-                    list_of_players.remove(member[1])
-                    await removed_member_dm(member[1], error=member[0])
+                    list_of_players.remove(member)
+                    await removed_member_dm(member, error=config["cache"][member.id]["rank_valuation"])
                 for player in reversed(list_of_players):
                     queue_dict[channel.id].insert(0, player)
                 not_eligible_members = []
