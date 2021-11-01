@@ -149,6 +149,7 @@ async def on_voice_channel_connect(member, channel):
             list_of_players = queue_dict[channel.id][0:10]
             queue_dict[channel.id] = queue_dict[channel.id][10:]
             for member in list_of_players:
+                assert len(list_of_players) == 10
                 try:
                     rank_valuation = cache[str(member.id)]["rank_valuation"]
                 except KeyError:
@@ -238,8 +239,6 @@ async def on_voice_channel_alone(member, channel1):  # executed when 2 members a
     print('inside on_voice_channel_alone')
     if 'blue' not in channel1.name.lower() and 'red' not in channel1.name.lower():
         return
-    if channel1 not in bot.get_all_channels():
-        return
     for i in channel1.category.channels:
         print('inside alone for loop')
         if i != channel1 and i.type.name == 'voice' and len(i.members) <= 2:
@@ -248,14 +247,20 @@ async def on_voice_channel_alone(member, channel1):  # executed when 2 members a
             red, blue, captain_id = await db.get_teams(match_id)
             red = add_member_obj(red)
             blue = add_member_obj(blue)
-
-            role = get(member.guild.roles, name=channel1.category.name)
+            category_to_be_deleted = channel1.category
+            role = get(member.guild.roles, name=category_to_be_deleted.name)
+            print('Role to be deleted name: ', role.name)
+            print('Category name: ', category_to_be_deleted.name)
             await role.delete()
-            for channel in channel1.category.channels:
-                print(f'\ndeleting {channel.name}')
-                await asyncio.gather(channel.delete())
-            await asyncio.gather(channel1.category.delete())
-            print(f'\ndeleting {channel1.category.name}')
+            for channel in enumerate(category_to_be_deleted.channels):
+                try:
+                    print(f'\n{channel[0]}. deleting {channel[1].name}')
+                    await asyncio.gather(channel[1].delete())
+                except:
+                    print("Passing from delete channel on_voice_channel_alone")
+                    pass
+            print(f'\ndeleting {category_to_be_deleted.name}')
+            await asyncio.gather(category_to_be_deleted.delete())
             print('deleted category and removed roles')
             break
     else:
