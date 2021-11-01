@@ -1,0 +1,566 @@
+{
+    "902580906219405384": {
+        "display_name": "[Mid] dont type",
+        "rank_valuation": 21,
+        "primary_role": "Mid",
+        "secondary_role": "Support"
+    },
+    "501546418444697610": {
+        "display_name": "[Mid] InfqmousAura",
+        "rank_valuation": 10,
+        "primary_role": "Mid",
+        "secondary_role": "Support"
+    },
+    "224602468732895232": {
+        "display_name": "Solienn",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "Support"
+    },
+    "805374998915186690": {
+        "display_name": "amae",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "Mid"
+    },
+    "576488736708362241": {
+        "display_name": "SoulFire",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "secondary"
+    },
+    "572074296642371627": {
+        "display_name": "[ADC] \u0160KT T1 Gumayusi",
+        "rank_valuation": 7,
+        "primary_role": "ADC",
+        "secondary_role": "Support"
+    },
+    "203993338519486464": {
+        "display_name": "[ADC] i wont flame u",
+        "rank_valuation": 9,
+        "primary_role": "ADC",
+        "secondary_role": "Mid"
+    },
+    "404449604919230474": {
+        "display_name": "[Support] Sl\u00edppery Sloth",
+        "rank_valuation": "unranked",
+        "primary_role": "Support",
+        "secondary_role": "Mid"
+    },
+    "419238541009092650": {
+        "display_name": "[ADC] Delp",
+        "rank_valuation": 8,
+        "primary_role": "ADC",
+        "secondary_role": "Top"
+    },
+    "841044994319581214": {
+        "display_name": "notmattybeans",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "secondary"
+    },
+    "182660952708218880": {
+        "display_name": "[Jungle] Levious",
+        "rank_valuation": 4.5,
+        "primary_role": "Jungle",
+        "secondary_role": "Support"
+    },
+    "117294568113831941": {
+        "display_name": "[ADC] Wregiment",
+        "rank_valuation": 13,
+        "primary_role": "ADC",
+        "secondary_role": "Mid"
+    },
+    "902577126690152579": {
+        "display_name": "[Top] sanserino34",
+        "rank_valuation": 6,
+        "primary_role": "Top",
+        "secondary_role": "Jungle"
+    },
+    "188030858182000640": {
+        "display_name": "[Jungle] Sunny god damn farrais",
+        "rank_valuation": "no_summoner",
+        "primary_role": "Jungle",
+        "secondary_role": "secondary"
+    },
+    "699643949651853462": {
+        "display_name": "[Support] Lo\u0192ton",
+        "rank_valuation": 6,
+        "primary_role": "Support",
+        "secondary_role": "Support"
+    },
+    "163411298980200448": {
+        "display_name": "[Mid] TTV AdamsuTV",
+        "rank_valuation": 5.5,
+        "primary_role": "Mid",
+        "secondary_role": "secondary"
+    },
+    "144613549531070464": {
+        "display_name": "Devilish",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "secondary"
+    },
+    "144108380623994880": {
+        "display_name": "[Jungle] Mikek",
+        "rank_valuation": 5,
+        "primary_role": "Jungle",
+        "secondary_role": "Mid"
+    },
+    "306998588637184001": {
+        "display_name": "[Jungle] undue",
+        "rank_valuation": 4.5,
+        "primary_role": "Jungle",
+        "secondary_role": "secondary"
+    },
+    "164130974559502336": {
+        "display_name": "[ADC] C\u00f8dyNilla",
+        "rank_valuation": 8,
+        "primary_role": "ADC",
+        "secondary_role": "Mid"
+    },
+    "210125208659558401": {
+        "display_name": "[ADC] Delp",
+        "rank_valuation": 8,
+        "primary_role": "ADC",
+        "secondary_role": "Top"
+    },
+    "145529771567218688": {
+        "display_name": "[Top] Achilles V8",
+        "rank_valuation": "no_summoner",
+        "primary_role": "Top",
+        "secondary_role": "Mid"
+    },
+    "615717206315237410": {
+        "display_name": "[ADC] Ksuby",
+        "rank_valuation": 6,
+        "primary_role": "ADC",
+        "secondary_role": "Mid"
+    },
+    "229925348811210752": {
+        "display_name": "[JUNGLE] ZapKiLLz",
+        "rank_valuation": 5,
+        "primary_role": "JUNGLE",
+        "secondary_role": "secondary"
+    },
+    "664339831047847956": {
+        "display_name": "[Jungle] ToSoW",
+        "rank_valuation": 9,
+        "primary_role": "Jungle",
+        "secondary_role": "Support"
+    },
+    "302301371372273666": {
+        "display_name": "[Support] Scrski",
+        "rank_valuation": 8,
+        "primary_role": "Support",
+        "secondary_role": "Jungle"
+    },
+    "201225119102795776": {
+        "display_name": "[Top] P247 Yoon",
+        "rank_valuation": 9,
+        "primary_role": "Top",
+        "secondary_role": "Jungle"
+    },
+    "147587333724700672": {
+        "display_name": "Korosensei",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "secondary"
+    },
+    "170300996516446208": {
+        "display_name": "[Support] CocoMisu",
+        "rank_valuation": 21,
+        "primary_role": "Support",
+        "secondary_role": "Mid"
+    },
+    "267504652344492032": {
+        "display_name": "[Support] Lo\u0192ton",
+        "rank_valuation": 6,
+        "primary_role": "Support",
+        "secondary_role": "Top"
+    },
+    "266386824635613185": {
+        "display_name": "Jake From StateFarm",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "secondary"
+    },
+    "398360856976424965": {
+        "display_name": "[ADC] P247 Peinto kun",
+        "rank_valuation": 13,
+        "primary_role": "ADC",
+        "secondary_role": "Jungle"
+    },
+    "384888610148581378": {
+        "display_name": "[Jungle] spicker24",
+        "rank_valuation": 5,
+        "primary_role": "Jungle",
+        "secondary_role": "Support"
+    },
+    "483655044445503499": {
+        "display_name": "[Top] BloodyChronos",
+        "rank_valuation": 5.5,
+        "primary_role": "Top",
+        "secondary_role": "Top"
+    },
+    "291180662747299840": {
+        "display_name": "[Mid] P247 DeltaConway",
+        "rank_valuation": 4,
+        "primary_role": "Mid",
+        "secondary_role": "Top"
+    },
+    "208420770127413248": {
+        "display_name": "[Mid] ItsCade",
+        "rank_valuation": 5,
+        "primary_role": "Mid",
+        "secondary_role": "Top"
+    },
+    "320261845028175873": {
+        "display_name": "[Mid] beb\u00e9 Faker",
+        "rank_valuation": "no_summoner",
+        "primary_role": "Mid",
+        "secondary_role": "Top"
+    },
+    "902580904537501746": {
+        "display_name": "[Jungle] Payneless",
+        "rank_valuation": 13,
+        "primary_role": "Jungle",
+        "secondary_role": "Adc"
+    },
+    "552677506306539523": {
+        "display_name": "[Top] WashedCycle",
+        "rank_valuation": 4.25,
+        "primary_role": "Top",
+        "secondary_role": "Mid"
+    },
+    "185026200698224640": {
+        "display_name": "[Support] WELL M3rcy",
+        "rank_valuation": 5,
+        "primary_role": "Support",
+        "secondary_role": "Support"
+    },
+    "875259689221386290": {
+        "display_name": "[Top] top d1ff",
+        "rank_valuation": 15,
+        "primary_role": "Top",
+        "secondary_role": "Mid"
+    },
+    "334872102148505600": {
+        "display_name": "[ADC] Pradelz",
+        "rank_valuation": 8,
+        "primary_role": "ADC",
+        "secondary_role": "Jungle"
+    },
+    "124047338971987968": {
+        "display_name": "[SUPPORT] Katsuii",
+        "rank_valuation": 8,
+        "primary_role": "SUPPORT",
+        "secondary_role": "secondary"
+    },
+    "299734489351847938": {
+        "display_name": "[Mid] CryoF0wl",
+        "rank_valuation": 5,
+        "primary_role": "Mid",
+        "secondary_role": "Top"
+    },
+    "326491837613211649": {
+        "display_name": "[Top] Eromanga S\u00e9nsei",
+        "rank_valuation": 8,
+        "primary_role": "Top",
+        "secondary_role": "Mid"
+    },
+    "902579742455267370": {
+        "display_name": "[Support] Pradelz",
+        "rank_valuation": 8,
+        "primary_role": "Support",
+        "secondary_role": "Mid"
+    },
+    "144946622042865665": {
+        "display_name": "[Mid] Xevel",
+        "rank_valuation": 17,
+        "primary_role": "Mid",
+        "secondary_role": "Top"
+    },
+    "275794209343275009": {
+        "display_name": "[Top] Dariussss",
+        "rank_valuation": "less_than_50",
+        "primary_role": "Top",
+        "secondary_role": "Mid"
+    },
+    "434998233140559873": {
+        "display_name": "[ADC] MUTE ME XD",
+        "rank_valuation": 9,
+        "primary_role": "ADC",
+        "secondary_role": "secondary"
+    },
+    "190266137089540096": {
+        "display_name": "[Mid] P247 Spurr",
+        "rank_valuation": 4.5,
+        "primary_role": "Mid",
+        "secondary_role": "Support"
+    },
+    "427215787934220298": {
+        "display_name": "[Top] sanserino34",
+        "rank_valuation": 6,
+        "primary_role": "Top",
+        "secondary_role": "Mid"
+    },
+    "902578715207278612": {
+        "display_name": "[Top] CYD NGU",
+        "rank_valuation": 36,
+        "primary_role": "Top",
+        "secondary_role": "Top"
+    },
+    "329824298275438592": {
+        "display_name": "[Mid] gruggz",
+        "rank_valuation": 10,
+        "primary_role": "Mid",
+        "secondary_role": "Top"
+    },
+    "251094293278621697": {
+        "display_name": "emma73519",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "Adc"
+    },
+    "487765803781980165": {
+        "display_name": "[Jungle] piplup",
+        "rank_valuation": "no_summoner",
+        "primary_role": "Jungle",
+        "secondary_role": "Mid"
+    },
+    "396468976844275712": {
+        "display_name": "Atreyzu",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "secondary"
+    },
+    "285566501824495627": {
+        "display_name": "[Top] P247 Neptune",
+        "rank_valuation": 6,
+        "primary_role": "Top",
+        "secondary_role": "Mid"
+    },
+    "184046515575193601": {
+        "display_name": "[TOP] Cristssss",
+        "rank_valuation": 5,
+        "primary_role": "TOP",
+        "secondary_role": "Mid"
+    },
+    "204409037289291778": {
+        "display_name": "[Support] StevetheCrusader",
+        "rank_valuation": 15,
+        "primary_role": "Support",
+        "secondary_role": "Adc"
+    },
+    "543592436585332736": {
+        "display_name": "[Mid] A70M1C1",
+        "rank_valuation": 5.5,
+        "primary_role": "Mid",
+        "secondary_role": "Top"
+    },
+    "271780086452060161": {
+        "display_name": "[Jungle] Reap3rofSouls",
+        "rank_valuation": 5,
+        "primary_role": "Jungle",
+        "secondary_role": "Top"
+    },
+    "100792936404381696": {
+        "display_name": "[ADC] Lexif",
+        "rank_valuation": 8,
+        "primary_role": "ADC",
+        "secondary_role": "Mid"
+    },
+    "125373719840423936": {
+        "display_name": "[Jungle] Payneless",
+        "rank_valuation": 13,
+        "primary_role": "Jungle",
+        "secondary_role": "Support"
+    },
+    "432017869962739712": {
+        "display_name": "[Mid] Living NPC",
+        "rank_valuation": "no_summoner",
+        "primary_role": "Mid",
+        "secondary_role": "Support"
+    },
+    "276487431623147520": {
+        "display_name": "[Top] Raigeqwitz",
+        "rank_valuation": 17,
+        "primary_role": "Top",
+        "secondary_role": "Mid"
+    },
+    "121042300120858624": {
+        "display_name": "[Mid] Galio Birdio",
+        "rank_valuation": 5,
+        "primary_role": "Mid",
+        "secondary_role": "Adc"
+    },
+    "876002085349523506": {
+        "display_name": "[ADC] Levious",
+        "rank_valuation": 4.5,
+        "primary_role": "ADC",
+        "secondary_role": "Jungle"
+    },
+    "225096337949982720": {
+        "display_name": "[Support] San E",
+        "rank_valuation": 13,
+        "primary_role": "Support",
+        "secondary_role": "Adc"
+    },
+    "137004688187981824": {
+        "display_name": "Big Papi Danimal TTV",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "secondary"
+    },
+    "285578722130526208": {
+        "display_name": "[Top] Pickhead7",
+        "rank_valuation": 8,
+        "primary_role": "Top",
+        "secondary_role": "Support"
+    },
+    "794755794373312533": {
+        "display_name": "[Jungle] CYD NGU",
+        "rank_valuation": 36,
+        "primary_role": "Jungle",
+        "secondary_role": "Top"
+    },
+    "239741044093222915": {
+        "display_name": "[Support] Astral lol",
+        "rank_valuation": 17,
+        "primary_role": "Support",
+        "secondary_role": "Adc"
+    },
+    "267066881054212119": {
+        "display_name": "[Mid] P247 Vinson",
+        "rank_valuation": 9,
+        "primary_role": "Mid",
+        "secondary_role": "Top"
+    },
+    "743373378672656445": {
+        "display_name": "[Mid] Xevel",
+        "rank_valuation": 17,
+        "primary_role": "Mid",
+        "secondary_role": "secondary"
+    },
+    "136619250147262464": {
+        "display_name": "[Support / Jungle] Not Roland",
+        "rank_valuation": "no_summoner",
+        "primary_role": "Support",
+        "secondary_role": "Jungle"
+    },
+    "464791651991420950": {
+        "display_name": "[Jungle] -_-",
+        "rank_valuation": "no_summoner",
+        "primary_role": "Jungle",
+        "secondary_role": "Support"
+    },
+    "409254452134936576": {
+        "display_name": "[Jungle] Fattychungus1776",
+        "rank_valuation": 8,
+        "primary_role": "Jungle",
+        "secondary_role": "Top"
+    },
+    "97452920793989120": {
+        "display_name": "[Jungle] JG Dif Unreal",
+        "rank_valuation": 15,
+        "primary_role": "Jungle",
+        "secondary_role": "secondary"
+    },
+    "211542060363284480": {
+        "display_name": "[Jungle] P247 SMURF",
+        "rank_valuation": 6,
+        "primary_role": "Jungle",
+        "secondary_role": "Mid"
+    },
+    "166370811282849802": {
+        "display_name": "[Jungle] dont type",
+        "rank_valuation": 21,
+        "primary_role": "Jungle",
+        "secondary_role": "Support"
+    },
+    "602291452831203328": {
+        "display_name": "Landunn",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "secondary"
+    },
+    "267412632942804992": {
+        "display_name": "[ADC] S\u00ed\u0142ent",
+        "rank_valuation": 7,
+        "primary_role": "ADC",
+        "secondary_role": "Mid"
+    },
+    "739946796654264320": {
+        "display_name": "[Top] TramaDC",
+        "rank_valuation": 5,
+        "primary_role": "Top",
+        "secondary_role": "Mid"
+    },
+    "902578859000594473": {
+        "display_name": "[JUNGLE] ZapKiLLz",
+        "rank_valuation": 5,
+        "primary_role": "JUNGLE",
+        "secondary_role": "Top"
+    },
+    "235138927051276288": {
+        "display_name": "[Mid] Donut2907",
+        "rank_valuation": 6,
+        "primary_role": "Mid",
+        "secondary_role": "Support"
+    },
+    "717876897878507580": {
+        "display_name": "[Top] cursedplayer67",
+        "rank_valuation": "no_summoner",
+        "primary_role": "Top",
+        "secondary_role": "Mid"
+    },
+    "681046809346572498": {
+        "display_name": "Kaitlyn",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "secondary"
+    },
+    "168791913674047488": {
+        "display_name": "Secroza",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "Mid"
+    },
+    "726365360361570416": {
+        "display_name": "Nerthu",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "secondary"
+    },
+    "285248257083441152": {
+        "display_name": "Go easy pls",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "secondary"
+    },
+    "217032506170408962": {
+        "display_name": "dbishop2012",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "secondary"
+    },
+    "217472286272389120": {
+        "display_name": "[Jungle] IC Hulk",
+        "rank_valuation": 13,
+        "primary_role": "Jungle",
+        "secondary_role": "Top"
+    },
+    "189565040809082881": {
+        "display_name": "Mike Taylor",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "secondary"
+    },
+    "115015366400409607": {
+        "display_name": "[Mid] I am a Babojagi",
+        "rank_valuation": "less_than_50",
+        "primary_role": "Mid",
+        "secondary_role": "secondary"
+    }
+}
