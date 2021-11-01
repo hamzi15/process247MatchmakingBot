@@ -103,15 +103,21 @@ async def fetch_info(member):
 
 def set_roles(member):
     print('inside set_roles')
+    print(member.display_name)
     lol_roles = ['top', 'jungle', 'mid', 'adc', 'support']
     retrieved_roles = ['primary', 'secondary']
+
     if '[' in member.display_name or ']' in member.display_name:
         main = re.split('[\[\] ]+', member.display_name)[1]
         if main.lower() in lol_roles:
             retrieved_roles[0] = main
     for role in member.roles:
-        if 'Mains ' not in role.name and role.name.lower().rstrip() in lol_roles:
+        #print(role.name)
+        if role.name.startswith('Mains ') and role.name[6:].lower().rstrip() in lol_roles and retrieved_roles[0] == 'primary':
+            retrieved_roles[0] = role.name[6:]
+        elif role.name.lower().rstrip() in lol_roles:
             retrieved_roles[1] = role.name
+    print(retrieved_roles)
     return retrieved_roles
 
 
