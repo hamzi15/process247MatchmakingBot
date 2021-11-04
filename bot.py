@@ -272,17 +272,13 @@ async def on_voice_channel_alone(member, channel1):  # executed when 2 members a
     else:
         return
 
-    try:
-        latest_match_stats = await Stats.get_stats(red, blue)
-        print('\nlatest_match_stats: ', latest_match_stats)
-        embed = get_stats_embed(latest_match_stats, captain_id, match_id)
-        print('Stats description: ', embed.description)
-        # send match stats to match history channels
-        for i in ['monthly_lb', 'weekly_lb', 'overall_lb', 'daily_lb']:
-            await db.write_stats(latest_match_stats, i)
-    except:
-        print('passing...an exception occured in db.write_stats')
-        pass
+    latest_match_stats = await Stats.get_stats(red, blue)
+    print('\nlatest_match_stats: ', latest_match_stats)
+    embed = get_stats_embed(latest_match_stats, captain_id, match_id)
+    print('Stats description: ', embed.description)
+    # send match stats to match history channels
+    for i in ['monthly_lb', 'weekly_lb', 'overall_lb', 'daily_lb']:
+        await db.write_stats(latest_match_stats, i)
 
 
 async def removed_member_dm(member, error='no_summoner'):
