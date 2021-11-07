@@ -66,8 +66,11 @@ async def update_cache():
 
         # Can be `value`, "no_summoner", "unranked", "less_than_50"
     with open('cache.json', 'w') as file:
+        print("inside dump")
+        print("\nCache: ", cache)
         json.dump(cache, file, indent=4)
         file.close()
+        print("dumped")
 
 
 async def fetch_info(member):
