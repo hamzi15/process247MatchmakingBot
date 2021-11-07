@@ -2,7 +2,7 @@
     "902580906219405384": {
         "display_name": "[Mid] dont type",
         "rank_valuation": 21,
-        "primary_role": "Support",
+        "primary_role": "Mid",
         "secondary_role": "Support"
     },
     "501546418444697610": {
@@ -32,13 +32,13 @@
     "572074296642371627": {
         "display_name": "[ADC] \u0160KT T1 Gumayusi",
         "rank_valuation": 7,
-        "primary_role": "Adc",
+        "primary_role": "ADC",
         "secondary_role": "Support"
     },
     "203993338519486464": {
         "display_name": "[ADC] i wont flame u",
-        "rank_valuation": 9,
-        "primary_role": "Adc",
+        "rank_valuation": 8,
+        "primary_role": "ADC",
         "secondary_role": "Mid"
     },
     "404449604919230474": {
@@ -50,7 +50,7 @@
     "419238541009092650": {
         "display_name": "[ADC] Delp",
         "rank_valuation": 8,
-        "primary_role": "Adc",
+        "primary_role": "ADC",
         "secondary_role": "Top"
     },
     "841044994319581214": {
@@ -68,25 +68,25 @@
     "117294568113831941": {
         "display_name": "[ADC] Wregiment",
         "rank_valuation": 13,
-        "primary_role": "Adc",
+        "primary_role": "ADC",
         "secondary_role": "Mid"
     },
     "902577126690152579": {
         "display_name": "[Top] sanserino34",
         "rank_valuation": 6,
-        "primary_role": "Support",
+        "primary_role": "Top",
         "secondary_role": "Jungle"
     },
     "188030858182000640": {
         "display_name": "[Jungle] Sunny god damn farrais",
         "rank_valuation": "no_summoner",
-        "primary_role": "primary",
+        "primary_role": "Jungle",
         "secondary_role": "secondary"
     },
     "699643949651853462": {
         "display_name": "[Support] Lo\u0192ton",
         "rank_valuation": 6,
-        "primary_role": "Adc",
+        "primary_role": "Support",
         "secondary_role": "Support"
     },
     "163411298980200448": {
@@ -96,10 +96,10 @@
         "secondary_role": "secondary"
     },
     "144613549531070464": {
-        "display_name": "Devilish",
-        "rank_valuation": "no_summoner",
-        "primary_role": "primary",
-        "secondary_role": "secondary"
+        "display_name": "[Top] real devilish",
+        "rank_valuation": 13,
+        "primary_role": "Top",
+        "secondary_role": "Mid"
     },
     "144108380623994880": {
         "display_name": "[Jungle] Mikek",
@@ -109,20 +109,20 @@
     },
     "306998588637184001": {
         "display_name": "[Jungle] undue",
-        "rank_valuation": 4.5,
-        "primary_role": "primary",
+        "rank_valuation": 5,
+        "primary_role": "Jungle",
         "secondary_role": "secondary"
     },
     "164130974559502336": {
         "display_name": "[ADC] C\u00f8dyNilla",
         "rank_valuation": 8,
-        "primary_role": "Adc",
+        "primary_role": "ADC",
         "secondary_role": "Mid"
     },
     "210125208659558401": {
         "display_name": "[ADC] Delp",
         "rank_valuation": 8,
-        "primary_role": "Mid",
+        "primary_role": "ADC",
         "secondary_role": "Top"
     },
     "145529771567218688": {
@@ -140,7 +140,7 @@
     "229925348811210752": {
         "display_name": "[JUNGLE] ZapKiLLz",
         "rank_valuation": 5,
-        "primary_role": "primary",
+        "primary_role": "JUNGLE",
         "secondary_role": "secondary"
     },
     "664339831047847956": {
@@ -188,7 +188,7 @@
     "398360856976424965": {
         "display_name": "[ADC] P247 Peinto kun",
         "rank_valuation": 13,
-        "primary_role": "Adc",
+        "primary_role": "ADC",
         "secondary_role": "Jungle"
     },
     "384888610148581378": {
@@ -200,7 +200,7 @@
     "483655044445503499": {
         "display_name": "[Top] BloodyChronos",
         "rank_valuation": 5.5,
-        "primary_role": "Jungle",
+        "primary_role": "Top",
         "secondary_role": "Top"
     },
     "291180662747299840": {
@@ -248,13 +248,13 @@
     "334872102148505600": {
         "display_name": "[ADC] Pradelz",
         "rank_valuation": 8,
-        "primary_role": "Adc",
+        "primary_role": "ADC",
         "secondary_role": "Jungle"
     },
     "124047338971987968": {
         "display_name": "[SUPPORT] Katsuii",
         "rank_valuation": 9,
-        "primary_role": "primary",
+        "primary_role": "SUPPORT",
         "secondary_role": "secondary"
     },
     "299734489351847938": {
@@ -272,7 +272,7 @@
     "902579742455267370": {
         "display_name": "[Support] Pradelz",
         "rank_valuation": 8,
-        "primary_role": "Adc",
+        "primary_role": "Support",
         "secondary_role": "Mid"
     },
     "144946622042865665": {
@@ -289,8 +289,8 @@
     },
     "434998233140559873": {
         "display_name": "[ADC] MUTE ME XD",
-        "rank_valuation": 9,
-        "primary_role": "Adc",
+        "rank_valuation": 10,
+        "primary_role": "ADC",
         "secondary_role": "secondary"
     },
     "190266137089540096": {
@@ -307,8 +307,8 @@
     },
     "902578715207278612": {
         "display_name": "[Top] CYD NGU",
-        "rank_valuation": 36,
-        "primary_role": "Support",
+        "rank_valuation": 38,
+        "primary_role": "Top",
         "secondary_role": "Top"
     },
     "329824298275438592": {
@@ -336,15 +336,15 @@
         "secondary_role": "secondary"
     },
     "285566501824495627": {
-        "display_name": "[Top] P247 Neptune",
+        "display_name": "[Mid] P247 Neptune",
         "rank_valuation": 6,
-        "primary_role": "Top",
-        "secondary_role": "Mid"
+        "primary_role": "Mid",
+        "secondary_role": "Top"
     },
     "184046515575193601": {
         "display_name": "[TOP] Cristssss",
         "rank_valuation": 5,
-        "primary_role": "Top",
+        "primary_role": "TOP",
         "secondary_role": "Mid"
     },
     "204409037289291778": {
@@ -368,7 +368,7 @@
     "100792936404381696": {
         "display_name": "[ADC] Lexif",
         "rank_valuation": 8,
-        "primary_role": "Adc",
+        "primary_role": "ADC",
         "secondary_role": "Mid"
     },
     "125373719840423936": {
@@ -398,7 +398,7 @@
     "876002085349523506": {
         "display_name": "[ADC] Levious",
         "rank_valuation": 4.5,
-        "primary_role": "Mid",
+        "primary_role": "ADC",
         "secondary_role": "Jungle"
     },
     "225096337949982720": {
@@ -421,7 +421,7 @@
     },
     "794755794373312533": {
         "display_name": "[Jungle] CYD NGU",
-        "rank_valuation": 36,
+        "rank_valuation": 38,
         "primary_role": "Jungle",
         "secondary_role": "Top"
     },
@@ -433,14 +433,14 @@
     },
     "267066881054212119": {
         "display_name": "[Mid] P247 Vinson",
-        "rank_valuation": 8,
+        "rank_valuation": 9,
         "primary_role": "Mid",
         "secondary_role": "Top"
     },
     "743373378672656445": {
         "display_name": "[Mid] Xevel",
         "rank_valuation": 17,
-        "primary_role": "primary",
+        "primary_role": "Mid",
         "secondary_role": "secondary"
     },
     "136619250147262464": {
@@ -488,7 +488,7 @@
     "267412632942804992": {
         "display_name": "[ADC] S\u00ed\u0142ent",
         "rank_valuation": 7,
-        "primary_role": "Adc",
+        "primary_role": "ADC",
         "secondary_role": "Mid"
     },
     "739946796654264320": {
@@ -500,7 +500,7 @@
     "902578859000594473": {
         "display_name": "[JUNGLE] ZapKiLLz",
         "rank_valuation": 5,
-        "primary_role": "Mid",
+        "primary_role": "JUNGLE",
         "secondary_role": "Top"
     },
     "235138927051276288": {
@@ -561,6 +561,24 @@
         "display_name": "[Mid] I am a Babojagi",
         "rank_valuation": "less_than_50",
         "primary_role": "Mid",
+        "secondary_role": "secondary"
+    },
+    "147121289755099136": {
+        "display_name": "[TOP] Thundersparky",
+        "rank_valuation": 7,
+        "primary_role": "TOP",
+        "secondary_role": "Adc"
+    },
+    "650681190671450157": {
+        "display_name": "Shehreyar99",
+        "rank_valuation": "no_summoner",
+        "primary_role": "primary",
+        "secondary_role": "Support"
+    },
+    "315670798272561162": {
+        "display_name": "Anth\u014dny",
+        "rank_valuation": "no_summoner",
+        "primary_role": "Top",
         "secondary_role": "secondary"
     }
 }
