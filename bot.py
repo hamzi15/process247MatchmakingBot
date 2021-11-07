@@ -36,15 +36,10 @@ db = dbAction()
 
 @bot.event
 async def on_ready():
-    # for id in cache:
-    #     if cache[id]['primary_role'] == 'primary' or type(cache[id]['rank_valuation']) is not int:
-    #         member = bot.get_user(int(id))
-    #         print('\nid: ', member.id)
-    #         print('\nname: ', member.display_name)
-    if not update_cache.is_running():
-        update_cache.start()
-    if not status_task.is_running():
-        status_task.start()
+    # if not update_cache.is_running():
+    #     update_cache.start()
+    # if not status_task.is_running():
+    #     status_task.start()
     for i in config['channel_ids']['lobby_channel_ids']:
         channel = get(bot.get_all_channels(), id=i)
         if channel.members:
@@ -63,7 +58,8 @@ async def update_cache():
         if not member.bot:
             retrieved_roles = set_roles(member)
             print('inside update_cache')
-            cache[str(member.id)] = {'display_name': member.display_name, 'rank_valuation': await fetch_info(member), 'primary_role': retrieved_roles[0],
+            cache[str(member.id)] = {'display_name': member.display_name, 'rank_valuation': await fetch_info(member),
+                                     'primary_role': retrieved_roles[0],
                                      'secondary_role': retrieved_roles[1]}
 
         # Can be `value`, "no_summoner", "unranked", "less_than_50"
@@ -112,8 +108,9 @@ def set_roles(member):
         if main.lower() in lol_roles:
             retrieved_roles[0] = main
     for role in member.roles:
-        #print(role.name)
-        if role.name.startswith('Mains ') and role.name[6:].lower().rstrip() in lol_roles and retrieved_roles[0] == 'primary':
+        # print(role.name)
+        if role.name.startswith('Mains ') and role.name[6:].lower().rstrip() in lol_roles \
+                and retrieved_roles[0] == 'primary':
             retrieved_roles[0] = role.name[6:]
         elif role.name.lower().rstrip() in lol_roles:
             retrieved_roles[1] = role.name
@@ -121,10 +118,10 @@ def set_roles(member):
     return retrieved_roles
 
 
-@tasks.loop(minutes=1.0)
-async def status_task():  # to set a game's status
-    statuses = ["with you!", "with Riot API!", "with humans!"]
-    await bot.change_presence(activity=discord.Game(random.choice(statuses)))
+# @tasks.loop(minutes=1.0)
+# async def status_task():  # to set a game's status
+#     statuses = ["with you!", "with Riot API!", "with humans!"]
+#     await bot.change_presence(activity=discord.Game(random.choice(statuses)))
 
 
 @bot.event
@@ -151,28 +148,30 @@ async def on_voice_channel_connect(member, channel):
         print(f'{member.name} joined {channel.name} lobby')
         matchmakingObj = MatchMaking()
         queue_dict[channel.id].append(member)  # get the relevant list from queue dict
-        if len(queue_dict[channel.id]) >= 10:
-            list_of_players = queue_dict[channel.id][0:10]
-            queue_dict[channel.id] = queue_dict[channel.id][10:]
+        if len(channel.members) >= 10:
+            list_of_players = list(set(queue_dict[channel.id][0:10]))
+            queue_dict[channel.id] = list(set(queue_dict[channel.id][10:]))
+            assert len(list_of_players) == 10
             for member in list_of_players:
-                assert len(list_of_players) == 10
                 try:
                     rank_valuation = cache[str(member.id)]["rank_valuation"]
                 except KeyError:
+                    print('rank_valuation except: ', member.display_name)
                     rank_valuation = await fetch_info(member)
                     retrieved_roles = set_roles(member)
-                    cache[str(member.id)] = {'rank_valuation': rank_valuation,
+                    cache[str(member.id)] = {'display_name': member.display_name,
+                                             'rank_valuation': rank_valuation,
                                              'primary_role': retrieved_roles[0],
                                              'secondary_role': retrieved_roles[1]}
-                    with open('cache.json', 'w') as file:
+                    with open('cache.json', 'w') as outfile:
                         json.dump(cache, file, indent=4)
-                        file.close()
+                        outfile.close()
                 check = True
-                if type(rank_valuation) != int:  # First rank_value check
-                    rank_valuation = await fetch_info(member)  # Check API again to reconfirm eligibilty
-                    if type(rank_valuation) != int:
+                if type(rank_valuation) != int and type(rank_valuation) != float:  # First rank_value check
+                    rank_valuation = await fetch_info(member)  # Check API again to reconfirm eligibility
+                    if type(rank_valuation) != int and type(rank_valuation) != float:
                         check = False
-                        not_eligible_members.append(member)  # Add to non eligibilty list after second test
+                        not_eligible_members.append(member)  # Add to non-eligibility list after second test
                     else:
                         # check = True
                         cache[str(member.id)]["rank_valuation"] = rank_valuation  # Otherwise update rank value
@@ -234,8 +233,10 @@ async def on_voice_channel_move(member, before_channel, after_channel):
             print("inside member changed teams channels")
             await member.move_to(before_channel)
             await member.send(embed=discord.Embed(color=0xff0000, description="**WARNING**\n" \
-                                                                              "You can't join the other team's voice channel.\n\n"
-                                                                              "**Don't do it again or else you will be banned.**"))
+                                                                              "You can't join the other team's voice "
+                                                                              "channel.\n\n "
+                                                                              "**Don't do it again or else you will "
+                                                                              "be banned.**"))
         else:
             return
 
@@ -285,15 +286,24 @@ async def removed_member_dm(member, error='no_summoner'):
     await member.move_to(get(member.guild.channels, id=797704589305577488))
     if error == 'no_summoner':
         await member.send(embed=discord.Embed(color=0xff000,
-                                              description="*We couldn't find you in LoL database. If you are registered with LoL then please add your summoner name in your server nickname, i.e. '[ADA] Goldfish'. AND register with Orianna Bot in the server.\nOR\nMention `@Tech Support` in the technical issues channel.*"))
+                                              description="*We couldn't find you in LoL database. If you are "
+                                                          "registered with LoL then please add your summoner name in "
+                                                          "your server nickname, i.e. '[ADA] Goldfish'. AND register "
+                                                          "with Orianna Bot in the server.\nOR\nMention `@Tech "
+                                                          "Support` in the technical issues channel.*"))
         print(f'removed {member.name} from lobby for not having summoner name')
     elif error == 'less_than_50':
         await member.send(embed=discord.Embed(color=0xff000,
-                                              description="*Your number of wins and losses is less than 50. Your account is not eligible for matchmaking. Please don't do it again.\n\nIf you are seeing this by mistake, please contact an admin.*"))
+                                              description="*Your number of wins and losses is less than 50. Your "
+                                                          "account is not eligible for matchmaking. Please don't do "
+                                                          "it again.\n\nIf you are seeing this by mistake, "
+                                                          "please contact an admin.*"))
         print(f'removed {member.name} from lobby for having wins & losses < 50')
     else:
         await member.send(embed=discord.Embed(color=0xff000,
-                                              description="*Your account is currently unranked and it's not eligible for matchmaking. Please don't do it again.\n\nIf you are seeing this by mistake, please contact an admin.*"))
+                                              description="*Your account is currently unranked and it's not eligible "
+                                                          "for matchmaking. Please don't do it again.\n\nIf you are "
+                                                          "seeing this by mistake, please contact an admin.*"))
         print(f'removed {member.name} from lobby for having an unranked account')
     return
 
@@ -340,7 +350,8 @@ async def get_description(red, blue, password, match_name, captain_id):
                   f"   **Mid     -** <@!{red['Mid'].id}>\n" \
                   f"   **ADC     -** <@!{red['Adc'].id}>\n" \
                   f"   **Support -** <@!{red['Support'].id}>\n\n\n" \
-                  f"*<@!{captain_id}> You are incharge of creating the lobby, please use the above `Lobby Name` and `Password`.*"
+                  f"*<@!{captain_id}> You are incharge of creating the lobby, please use the above `Lobby Name` and " \
+                  f"`Password`.* "
     return description
 
 
