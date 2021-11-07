@@ -58,7 +58,7 @@ async def update_cache():
         if not member.bot:
             retrieved_roles = set_roles(member)
             print('inside update_cache')
-            cache[str(member.id)] = {'display_name': member.display_name, 'rank_valuation': await fetch_info(member),
+            cache[str(member.id)] = {'display_name': str(member.display_name), 'rank_valuation': await fetch_info(member),
                                      'primary_role': retrieved_roles[0],
                                      'secondary_role': retrieved_roles[1]}
 
