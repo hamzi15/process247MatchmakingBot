@@ -118,10 +118,10 @@ def set_roles(member):
     return retrieved_roles
 
 
-# @tasks.loop(minutes=1.0)
-# async def status_task():  # to set a game's status
-#     statuses = ["with you!", "with Riot API!", "with humans!"]
-#     await bot.change_presence(activity=discord.Game(random.choice(statuses)))
+@tasks.loop(minutes=2.0)
+async def status_task():  # to set a game's status
+    statuses = ["with you!", "with Riot API!", "with humans!"]
+    await bot.change_presence(activity=discord.Game(random.choice(statuses)))
 
 
 @bot.event
