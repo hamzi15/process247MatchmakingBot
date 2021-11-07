@@ -36,10 +36,10 @@ db = dbAction()
 
 @bot.event
 async def on_ready():
-    # if not update_cache.is_running():
-    #     update_cache.start()
-    # if not status_task.is_running():
-    #     status_task.start()
+    if not update_cache.is_running():
+        update_cache.start()
+    if not status_task.is_running():
+        status_task.start()
     for i in config['channel_ids']['lobby_channel_ids']:
         channel = get(bot.get_all_channels(), id=i)
         if channel.members:
@@ -151,7 +151,7 @@ async def on_voice_channel_connect(member, channel):
         if len(channel.members) >= 10:
             list_of_players = list(set(queue_dict[channel.id][0:10]))
             queue_dict[channel.id] = list(set(queue_dict[channel.id][10:]))
-            assert len(list_of_players) == 10
+            assert len(channel.members) == 10, "less than 10 members in channel"
             for member in list_of_players:
                 try:
                     rank_valuation = cache[str(member.id)]["rank_valuation"]
@@ -182,6 +182,7 @@ async def on_voice_channel_connect(member, channel):
                     player_info = [rank_valuation, cache[str(member.id)]["primary_role"],
                                    cache[str(member.id)]["secondary_role"]]
                     matchmakingObj.dict_of_players[member] = player_info
+                assert len(channel.members) == 10, "less than 10 members in channel"
 
             if not_eligible_members:
                 for member in not_eligible_members:
