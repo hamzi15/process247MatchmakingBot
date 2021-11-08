@@ -58,7 +58,10 @@ async def update_cache():
         if not member.bot:
             retrieved_roles = set_roles(member)
             print('inside update_cache')
-            cache[str(member.id)] = {'display_name': str(member.display_name), 'rank_valuation': await fetch_info(member),
+            display_name = str(member.display_name)
+            id = str(member.id)
+            rank_valuation = await fetch_info(member)
+            cache[id] = {'display_name': display_name, 'rank_valuation': rank_valuation,
                                      'primary_role': retrieved_roles[0],
                                      'secondary_role': retrieved_roles[1]}
 
@@ -161,7 +164,8 @@ async def on_voice_channel_connect(member, channel):
                     print('rank_valuation except: ', member.display_name)
                     rank_valuation = await fetch_info(member)
                     retrieved_roles = set_roles(member)
-                    cache[str(member.id)] = {'display_name': member.display_name,
+                    id = str(member.id)
+                    cache[id] = {'display_name': member.display_name,
                                              'rank_valuation': rank_valuation,
                                              'primary_role': retrieved_roles[0],
                                              'secondary_role': retrieved_roles[1]}
@@ -176,7 +180,8 @@ async def on_voice_channel_connect(member, channel):
                         not_eligible_members.append(member)  # Add to non-eligibility list after second test
                     else:
                         # check = True
-                        cache[str(member.id)]["rank_valuation"] = rank_valuation  # Otherwise update rank value
+                        id = str(member.id)
+                        cache[id]["rank_valuation"] = rank_valuation  # Otherwise update rank value
                         with open('cache.json', 'w') as file:
                             json.dump(cache, file)
                             file.close()
