@@ -57,20 +57,15 @@ async def update_cache():
     for member in bot.get_all_members():
         if not member.bot:
             retrieved_roles = set_roles(member)
-            rank_valuation  = await fetch_info(member)
-            display_name = str(member.display_name)
             print('inside update_cache')
-            cache[str(member.id)] = {'display_name': display_name, 'rank_valuation': rank_valuation,
+            cache[str(member.id)] = {'display_name': str(member.display_name), 'rank_valuation': await fetch_info(member),
                                      'primary_role': retrieved_roles[0],
                                      'secondary_role': retrieved_roles[1]}
 
         # Can be `value`, "no_summoner", "unranked", "less_than_50"
     with open('cache.json', 'w') as file:
-        print("inside dump")
-        print("\nCache: ", cache)
         json.dump(cache, file, indent=4)
         file.close()
-        print("dumped")
 
 
 async def fetch_info(member):
@@ -123,7 +118,7 @@ def set_roles(member):
     return retrieved_roles
 
 
-@tasks.loop(minutes=2.0)
+@tasks.loop(minutes=1.0)
 async def status_task():  # to set a game's status
     statuses = ["with you!", "with Riot API!", "with humans!"]
     await bot.change_presence(activity=discord.Game(random.choice(statuses)))
@@ -156,7 +151,9 @@ async def on_voice_channel_connect(member, channel):
         if len(channel.members) >= 10:
             list_of_players = list(set(queue_dict[channel.id][0:10]))
             queue_dict[channel.id] = list(set(queue_dict[channel.id][10:]))
-            assert len(channel.members) == 10, "less than 10 members in channel"
+
+            lobby_channel = get(bot.get_all_channels(), id=channel.id)
+            assert len(lobby_channel.members) >= 10, "Members less than 10 in lobby"
             for member in list_of_players:
                 try:
                     rank_valuation = cache[str(member.id)]["rank_valuation"]
@@ -187,7 +184,9 @@ async def on_voice_channel_connect(member, channel):
                     player_info = [rank_valuation, cache[str(member.id)]["primary_role"],
                                    cache[str(member.id)]["secondary_role"]]
                     matchmakingObj.dict_of_players[member] = player_info
-                assert len(channel.members) == 10, "less than 10 members in channel"
+
+            lobby_channel = get(bot.get_all_channels(), id=channel.id)
+            assert len(lobby_channel.members) >= 10, "Members less than 10 in lobby"
 
             if not_eligible_members:
                 for member in not_eligible_members:
