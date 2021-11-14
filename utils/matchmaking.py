@@ -22,37 +22,85 @@ class MatchMaking:
         self.bubbleSort(lst_of_memberObjs)
         # matchmaking starts here then make two lists of players
         # also put a check if a player has no rank then give them diamond rank
-        red = {}
-        blue = {}
-        redQueue = ['Top', 'Jungle', 'Mid', 'Adc', 'Support']
-        blueQueue = ['Top', 'Jungle', 'Mid', 'Adc', 'Support']
+        red = []
+        blue = []
+        redQueue = ['top', 'jungle', 'mid', 'adc', 'support']
+        blueQueue = ['top', 'jungle', 'mid', 'adc', 'support']
         red_sum = 0
         blue_sum = 0
         # MATCHMAKING
         for member in lst_of_memberObjs:
             if len(blue) == 5:
-                self.assign_role(redQueue, member, red)
+                # self.assign_role(redQueue, member, red)
+                red.append(member)
             elif len(red) == 5:
-                self.assign_role(blueQueue, member, blue)
+                # self.assign_role(blueQueue, member, blue)
+                blue.append(member)
             elif red_sum == blue_sum:
                 choice = random.randint(0, 1)
                 if choice == 0:
-                    self.assign_role(redQueue, member, red)
+                    red.append(member)
                 else:
-                    self.assign_role(blueQueue, member, blue)
+                    blue.append(member)
             elif red_sum < blue_sum:
-                self.assign_role(redQueue, member, red)
+                red.append(member)
             elif red_sum > blue_sum:
-                self.assign_role(blueQueue, member, blue)
-            for role in red:
-                member = red[role]
+                blue.append(member)
+            for member in red:
                 red_sum += self.dict_of_players[member][0]
-            for role in blue:
-                member = blue[role]
+            for member in blue:
                 blue_sum += self.dict_of_players[member][0]
+
+        red = self.assign_role(redQueue, red)
+        blue = self.assign_role(blueQueue, blue)
 
         return red, blue
 
+    def assign_role(self, list_of_roles, members):
+        dict = {}
+        not_assigned = []
+        for member in members:
+            member_roles = self.dict_of_players[member][1:]
+            if member_roles[0].lower() in list_of_roles:  # assign all possible primary roles
+                dict[member_roles[0]] = member
+                list_of_roles.remove(member_roles[0])
+            else:  # else appedn to not assigned list
+                not_assigned.append(member)
+        still_not_assigned = []
+
+        for member in not_assigned:
+            member_roles = self.dict_of_players[member][1:]
+            if member_roles[1].lower() in list_of_roles:  # now check if secondary role is available
+                dict[member_roles[1]] = member
+                list_of_roles.remove(member_roles[1])
+            elif member_roles[0] != 'primary' and (self.dict_of_players[dict[member_roles[0]]][
+                2]).lower() in list_of_roles:  # check if the previous main holder has a secondary which they can switch to
+                prev_role_holder = dict[member_roles[0]]
+                dict[member_roles[0]] = member  # assign the primary to this one
+                dict[self.dict_of_players[prev_role_holder][2]] = prev_role_holder  # assign the secondary to this one
+                list_of_roles.remove(self.dict_of_players[prev_role_holder][2])
+            elif member_roles[1] != 'secondary' and (self.dict_of_players[dict[member_roles[1]]][
+                2]).lower() in list_of_roles:  # check if the previous main holder has a secondary which they can switch to
+                prev_role_holder = dict[member_roles[1]]
+                dict[member_roles[1]] = member  # assign the primary to this one
+                dict[self.dict_of_players[prev_role_holder][2]] = prev_role_holder  # assign the secondary to this one
+                list_of_roles.remove(self.dict_of_players[prev_role_holder][2])
+            else:
+                still_not_assigned.append(member)
+        for member in still_not_assigned:
+            member_roles = self.dict_of_players[member][1:]
+            if member_roles[0].lower() in list_of_roles:  # assign all possible primary roles
+                dict[member_roles[0]] = member
+                list_of_roles.remove(member_roles[0])
+            elif member_roles[1].lower() in list_of_roles:  # now check if secondary role is available
+                dict[member_roles[1]] = member
+                list_of_roles.remove(member_roles[1])
+            else:
+                dict[list_of_roles.pop()] = member
+
+        return dict
+
+    ''''
     def assign_role(self, queue, member, dict):  # (red or blue queue, member from lst[index], and red or blue dict)
         member_roles = self.dict_of_players[member][
                        1:]  # Now the function can go through more roles or have none and still assign
@@ -65,7 +113,7 @@ class MatchMaking:
                 queue.remove(role)
                 break
         if not role_assigned:
-            dict[queue.pop()] = member
+            dict[queue.pop()] = member'''
 
     @staticmethod
     async def fetch_rank(member):
@@ -187,7 +235,7 @@ class MatchMaking:
                 mmr = 21
             else:
                 mmr = 13
-        elif tier == "master" or tier == "grandmaster" or tier == " challenger":
+        elif tier == "master" or tier == "grandmaster" or tier == "challenger":
             mmr = 22
             lpValue = (int(lp / 100)) * 2
             mmr += lpValue
