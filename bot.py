@@ -3,19 +3,19 @@ import datetime
 import json
 import os
 import platform
-import sys
 import random
-import string
 import re
+import string
+import sys
 
 import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import Bot
 from discord.utils import get
 
+from utils.stats import Stats
 from utils.db import dbAction
 from utils.matchmaking import MatchMaking
-from utils.stats import Stats
 
 if not os.path.isfile("config.json") and not os.path.isfile('cache.json'):
     sys.exit("'config.json' not found! Add it and try again.")
@@ -25,13 +25,14 @@ else:
     with open("cache.json", encoding="cp866") as file:
         cache = json.load(file)
 
+db = dbAction()
 intents = discord.Intents.all()
 intents.members = True
 bot = Bot(command_prefix=config["bot_prefix"], intents=intents)
+
 queue_dict = {}
 for i in config['channel_ids']['lobby_channel_ids']:
     queue_dict[int(i)] = []
-db = dbAction()
 
 
 @bot.event
@@ -52,23 +53,17 @@ async def on_ready():
     print(f"Running on: {platform.system()} {platform.release()} ({os.name})")
 
 
-@tasks.loop(hours=10)
-async def update_cache():
-    for member in bot.get_all_members():
-        if not member.bot:
-            retrieved_roles = set_roles(member)
-            print('inside update_cache')
-            display_name = str(member.display_name)
-            id = str(member.id)
-            rank_valuation = await fetch_info(member)
-            cache[id] = {'display_name': display_name, 'rank_valuation': rank_valuation,
-                                     'primary_role': retrieved_roles[0],
-                                     'secondary_role': retrieved_roles[1]}
-
-        # Can be `value`, "no_summoner", "unranked", "less_than_50"
-    with open('cache.json', 'w') as file:
-        json.dump(cache, file, indent=4)
-        file.close()
+bot.remove_command("help")
+if __name__ == "__main__":  # loading the features of the bot
+    for file in os.listdir("./cogs"):
+        if file.endswith(".py"):
+            extension = file[:-3]
+            try:
+                bot.load_extension(f"cogs.{extension}")
+                print(f"Loaded extension '{extension}'")
+            except Exception as e:
+                exception = f"{type(e).__name__}: {e}"
+                print(f"Failed to load extension {extension}\n{exception}")
 
 
 async def fetch_info(member):
@@ -100,6 +95,78 @@ async def fetch_info(member):
                 return ans
 
 
+@tasks.loop(minutes=1.0)
+async def status_task():  # to set a game's status
+    statuses = ["with you!", "with Riot API!", "with humans!"]
+    await bot.change_presence(activity=discord.Game(random.choice(statuses)))
+
+
+@tasks.loop(hours=10)
+async def update_cache():
+    for member in bot.get_all_members():
+        if not member.bot:
+            retrieved_roles = set_roles(member)
+            print('inside update_cache')
+            display_name = str(member.display_name)
+            id = str(member.id)
+            rank_valuation = await fetch_info(member)
+            cache[id] = {'display_name': display_name, 'rank_valuation': rank_valuation,
+                              'primary_role': retrieved_roles[0].lower(),
+                              'secondary_role': retrieved_roles[1].lower()}
+    # Can be `value`, "no_summoner", "unranked", "less_than_50"
+    with open('cache.json', 'w', encoding="cp866") as file:
+        json.dump(cache, file, indent=4)
+        file.close()
+
+
+def generate_name_password(lobby_channel):
+    password = ''
+    for x in range(11):
+        password += random.choice(string.ascii_letters + string.digits)
+    name = f"P247-{lobby_channel.category.name.split('-')[0]}-{config['lobby_numbers'][str(lobby_channel.id)]}-{random.choice(password) + random.choice(password)}"
+    config['lobby_numbers'][str(lobby_channel.id)] += 1
+    with open('config.json', 'w') as file:
+        json.dump(config, file, indent=4)
+        file.close()
+    return name, password
+
+
+async def create_channels(guild, lobby_channel):
+    role_category_name, password = generate_name_password(lobby_channel)
+    player_role = get(guild.roles, name='Player')
+    category = await guild.create_category(name=role_category_name)
+    role = await guild.create_role(name=role_category_name)
+    await category.set_permissions(role, read_messages=True, send_messages=True, connect=True, speak=True)
+
+    # make category accessible only to people with a specific role which we generate. The name of
+    # the category and role must be the same
+
+    await category.set_permissions(guild.default_role, read_messages=True, connect=False, speak=False,
+                                   send_messages=False)
+
+    blue_name = '🔵' + config['vc2']
+    blue = await category.create_voice_channel(name=blue_name, bitrate=98000, user_limit=5)
+    await blue.set_permissions(role, connect=True, speak=True)
+    await blue.set_permissions(guild.default_role, connect=False, speak=False)
+    await blue.set_permissions(player_role, read_messages=True, connect=False, speak=False)
+
+    red_name = '🔴' + config['vc1']
+    red = await category.create_voice_channel(name=red_name, bitrate=98000, user_limit=5)
+    await red.set_permissions(role, connect=True, speak=True)
+    await red.set_permissions(guild.default_role, connect=False, speak=False)
+    await red.set_permissions(player_role, read_messages=True, connect=False, speak=False)
+
+    text_channel_name = '⚔️' + config['tc']
+    text_channel = await category.create_text_channel(name=text_channel_name)
+    await text_channel.set_permissions(role, read_messages=True, send_messages=True, connect=True, speak=True)
+    await text_channel.set_permissions(guild.default_role, read_messages=False, send_messages=False, connect=False,
+                                       speak=False)
+    await text_channel.set_permissions(player_role, read_messages=False, send_messages=False, connect=False,
+                                       speak=False)
+
+    return red, blue, text_channel, role, password, role_category_name
+
+
 def set_roles(member):
     print('inside set_roles')
     print(member.display_name)
@@ -109,22 +176,16 @@ def set_roles(member):
     if '[' in member.display_name or ']' in member.display_name:
         main = re.split('[\[\] ]+', member.display_name)[1]
         if main.lower() in lol_roles:
-            retrieved_roles[0] = main
+            retrieved_roles[0] = main.lower()
     for role in member.roles:
         # print(role.name)
         if role.name.startswith('Mains ') and role.name[6:].lower().rstrip() in lol_roles \
                 and retrieved_roles[0] == 'primary':
-            retrieved_roles[0] = role.name[6:]
+            retrieved_roles[0] = role.name[6:].lower()
         elif role.name.lower().rstrip() in lol_roles:
-            retrieved_roles[1] = role.name
+            retrieved_roles[1] = role.name.lower()
     print(retrieved_roles)
     return retrieved_roles
-
-
-@tasks.loop(minutes=1.0)
-async def status_task():  # to set a game's status
-    statuses = ["with you!", "with Riot API!", "with humans!"]
-    await bot.change_presence(activity=discord.Game(random.choice(statuses)))
 
 
 @bot.event
@@ -138,7 +199,6 @@ async def on_voice_channel_disconnect(member, channel):
                 print(f'{member.name} left the lobby')
                 break
 
-
 not_eligible_members = []
 
 
@@ -150,13 +210,15 @@ async def on_voice_channel_connect(member, channel):
     if channel.id in lobby_channels:
         print(f'{member.name} joined {channel.name} lobby')
         matchmakingObj = MatchMaking()
-        queue_dict[channel.id].append(member)  # get the relevant list from queue dict
+        if member not in queue_dict[channel.id]:
+            queue_dict[channel.id].append(member)  # get the relevant list from queue dict
+        print("-------------\nLen of Queue Dict: ", len(queue_dict[channel.id]))
         if len(channel.members) >= 10:
-            list_of_players = list(set(queue_dict[channel.id][0:10]))
-            queue_dict[channel.id] = list(set(queue_dict[channel.id][10:]))
-
-            lobby_channel = get(bot.get_all_channels(), id=channel.id)
-            assert len(lobby_channel.members) >= 10, "Members less than 10 in lobby"
+            list_of_players = queue_dict[channel.id][0:10]
+            print('\nList of players: ', list_of_players)
+            print('Length: ', list_of_players)
+            queue_dict[channel.id] = queue_dict[channel.id][10:]
+            assert len(list_of_players) >= 10, "Members less than 10 in lobby"
             for member in list_of_players:
                 try:
                     rank_valuation = cache[str(member.id)]["rank_valuation"]
@@ -164,13 +226,12 @@ async def on_voice_channel_connect(member, channel):
                     print('rank_valuation except: ', member.display_name)
                     rank_valuation = await fetch_info(member)
                     retrieved_roles = set_roles(member)
-                    id = str(member.id)
-                    cache[id] = {'display_name': member.display_name,
+                    cache[str(member.id)] = {'display_name': member.display_name,
                                              'rank_valuation': rank_valuation,
-                                             'primary_role': retrieved_roles[0],
-                                             'secondary_role': retrieved_roles[1]}
+                                             'primary_role': retrieved_roles[0].lower(),
+                                             'secondary_role': retrieved_roles[1].lower()}
                     with open('cache.json', 'w') as outfile:
-                        json.dump(cache, file, indent=4)
+                        json.dump(cache, outfile, indent=4)
                         outfile.close()
                 check = True
                 if type(rank_valuation) != int and type(rank_valuation) != float:  # First rank_value check
@@ -204,8 +265,8 @@ async def on_voice_channel_connect(member, channel):
 
             red, blue = matchmakingObj.matchmaker(list_of_players)
             captain = random.choice(list_of_players)
-            print('\nRed: ', red)
-            print('\nBlue: ', blue)
+            print('\nRed team after matchmaking: ', red)
+            print('\nBlue team after matchmaking: ', blue)
             red_channel, blue_channel, text_channel, role, password, lobby_name = \
                 (await asyncio.gather(create_channels(member.guild, channel)))[0]
             await db.write_to_db(lobby_name, red, blue, captain.id)  # save the match teams and match id in db
@@ -239,7 +300,8 @@ async def on_voice_channel_move(member, before_channel, after_channel):
     if before_channel.category == after_channel.category:
         if ('blue side' in before_channel_name and 'red side' in after_channel_name) or \
                 ('blue side' in before_channel_name and 'red side' in after_channel_name):
-            # if member changes team voice channel, i.e. from red side to blue side or vice versa
+            # if member changes team voice channel,
+            # i.e. from red side to blue side or vice versa
             print("inside member changed teams channels")
             await member.move_to(before_channel)
             await member.send(embed=discord.Embed(color=0xff0000, description="**WARNING**\n" \
@@ -349,17 +411,17 @@ async def get_description(red, blue, password, match_name, captain_id):
                   f"**Password:**       {password}\n\n" \
                   f"**Captain:** <@!{captain_id}>\n\n" \
                   f"**🔵 Blue Team: **\n" \
-                  f"   **Top     -** <@!{blue['Top'].id}>\n" \
-                  f"   **Jungle  -** <@!{blue['Jungle'].id}>\n" \
-                  f"   **Mid     -** <@!{blue['Mid'].id}>\n" \
-                  f"   **ADC     -** <@!{blue['Adc'].id}>\n" \
-                  f"   **Support -** <@!{blue['Support'].id}>\n\n" \
+                  f"   **Top     -** <@!{blue['top'].id}>\n" \
+                  f"   **Jungle  -** <@!{blue['jungle'].id}>\n" \
+                  f"   **Mid     -** <@!{blue['mid'].id}>\n" \
+                  f"   **ADC     -** <@!{blue['adc'].id}>\n" \
+                  f"   **Support -** <@!{blue['support'].id}>\n\n" \
                   f"**🔴 Red Team: **\n" \
-                  f"   **Top     -** <@!{red['Top'].id}>\n" \
-                  f"   **Jungle  -** <@!{red['Jungle'].id}>\n" \
-                  f"   **Mid     -** <@!{red['Mid'].id}>\n" \
-                  f"   **ADC     -** <@!{red['Adc'].id}>\n" \
-                  f"   **Support -** <@!{red['Support'].id}>\n\n\n" \
+                  f"   **Top     -** <@!{red['top'].id}>\n" \
+                  f"   **Jungle  -** <@!{red['jungle'].id}>\n" \
+                  f"   **Mid     -** <@!{red['mid'].id}>\n" \
+                  f"   **ADC     -** <@!{red['adc'].id}>\n" \
+                  f"   **Support -** <@!{red['support'].id}>\n\n\n" \
                   f"*<@!{captain_id}> You are incharge of creating the lobby, please use the above `Lobby Name` and " \
                   f"`Password`.* "
     return description
@@ -372,67 +434,6 @@ async def get_attention(channel, role):
     embed.set_footer(text="Join the lobby now to start a new match.")
     embed.timestamp = datetime.datetime.now()
     await channel.send(content=role.mention, embed=embed)
-
-
-def generate_name_password(lobby_channel):
-    password = ''
-    for x in range(11):
-        password += random.choice(string.ascii_letters + string.digits)
-    name = f"P247-{lobby_channel.category.name.split('-')[0]}-{config['lobby_numbers'][str(lobby_channel.id)]}-{random.choice(password) + random.choice(password)}"
-    config['lobby_numbers'][str(lobby_channel.id)] += 1
-    with open('config.json', 'w') as file:
-        json.dump(config, file, indent=4)
-        file.close()
-    return name, password
-
-
-async def create_channels(guild, lobby_channel):
-    role_category_name, password = generate_name_password(lobby_channel)
-    player_role = get(guild.roles, name='Player')
-    category = await guild.create_category(name=role_category_name)
-    role = await guild.create_role(name=role_category_name)
-    await category.set_permissions(role, read_messages=True, send_messages=True, connect=True, speak=True)
-
-    # make category accessible only to people with a specific role which we generate. The name of
-    # the category and role must be the same
-
-    await category.set_permissions(guild.default_role, read_messages=True, connect=False, speak=False,
-                                   send_messages=False)
-
-    blue_name = '🔵' + config['vc2']
-    blue = await category.create_voice_channel(name=blue_name, bitrate=98000, user_limit=5)
-    await blue.set_permissions(role, connect=True, speak=True)
-    await blue.set_permissions(guild.default_role, connect=False, speak=False)
-    await blue.set_permissions(player_role, read_messages=True, connect=False, speak=False)
-
-    red_name = '🔴' + config['vc1']
-    red = await category.create_voice_channel(name=red_name, bitrate=98000, user_limit=5)
-    await red.set_permissions(role, connect=True, speak=True)
-    await red.set_permissions(guild.default_role, connect=False, speak=False)
-    await red.set_permissions(player_role, read_messages=True, connect=False, speak=False)
-
-    text_channel_name = '⚔️' + config['tc']
-    text_channel = await category.create_text_channel(name=text_channel_name)
-    await text_channel.set_permissions(role, read_messages=True, send_messages=True, connect=True, speak=True)
-    await text_channel.set_permissions(guild.default_role, read_messages=False, send_messages=False, connect=False,
-                                       speak=False)
-    await text_channel.set_permissions(player_role, read_messages=False, send_messages=False, connect=False,
-                                       speak=False)
-
-    return red, blue, text_channel, role, password, role_category_name
-
-
-bot.remove_command("help")
-if __name__ == "__main__":  # loading the features of the bot
-    for file in os.listdir("./cogs"):
-        if file.endswith(".py"):
-            extension = file[:-3]
-            try:
-                bot.load_extension(f"cogs.{extension}")
-                print(f"Loaded extension '{extension}'")
-            except Exception as e:
-                exception = f"{type(e).__name__}: {e}"
-                print(f"Failed to load extension {extension}\n{exception}")
 
 
 @bot.event
