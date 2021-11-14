@@ -213,7 +213,7 @@ async def on_voice_channel_connect(member, channel):
         if member not in queue_dict[channel.id]:
             queue_dict[channel.id].append(member)  # get the relevant list from queue dict
         print("-------------\nLen of Queue Dict: ", len(queue_dict[channel.id]))
-        if len(queue_dict[channel.id]) >= 10:
+        if len(queue_dict[channel.id]) >= 10 and len(channel.members) >= 10:
             list_of_players = queue_dict[channel.id][0:10]
             print('\nList of players: ', list_of_players)
             print('Length: ', list_of_players)
