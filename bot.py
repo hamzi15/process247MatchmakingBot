@@ -215,10 +215,15 @@ async def on_voice_channel_connect(member, channel):
         print("-------------\nLen of Queue Dict: ", len(queue_dict[channel.id]))
         if len(queue_dict[channel.id]) >= 10 and len(channel.members) >= 10:
             list_of_players = queue_dict[channel.id][0:10]
+            for i in list_of_players:
+                if i.voice.channel:
+                    continue
+                else:
+                    return
             print('\nList of players: ', list_of_players)
             print('Length: ', list_of_players)
             queue_dict[channel.id] = queue_dict[channel.id][10:]
-            assert len(list_of_players) >= 10, "Members less than 10 in lobby"
+
             for member in list_of_players:
                 try:
                     rank_valuation = cache[str(member.id)]["rank_valuation"]
@@ -252,40 +257,41 @@ async def on_voice_channel_connect(member, channel):
                     matchmakingObj.dict_of_players[member] = player_info
 
             lobby_channel = get(bot.get_all_channels(), id=channel.id)
-            assert len(lobby_channel.members) >= 10, "Members less than 10 in lobby"
+            assert len(lobby_channel.members) == 10, "Members less than 10 in lobby"
 
             if not_eligible_members:
+                for player in reversed(list_of_players):
+                    queue_dict[channel.id].insert(0, player)
                 for member in not_eligible_members:
                     list_of_players.remove(member)
                     await removed_member_dm(member, error=cache[str(member.id)]["rank_valuation"])
-                for player in reversed(list_of_players):
-                    queue_dict[channel.id].insert(0, player)
                 not_eligible_members = []
                 return
-
-            red, blue = matchmakingObj.matchmaker(list_of_players)
-            captain = random.choice(list_of_players)
-            print('\nRed team after matchmaking: ', red)
-            print('\nBlue team after matchmaking: ', blue)
-            red_channel, blue_channel, text_channel, role, password, lobby_name = \
-                (await asyncio.gather(create_channels(member.guild, channel)))[0]
-            await db.write_to_db(lobby_name, red, blue, captain.id)  # save the match teams and match id in db
-            embed = discord.Embed(color=random.randint(0, 0xffff), description="⏳ Matchmaking...")
-            embed.timestamp = datetime.datetime.now()
-            for key in blue:
-                await (blue[key]).add_roles(role)
-                await (blue[key]).move_to(blue_channel)
-            for key in red:
-                print('\nred[key]: ', red[key])
-                await (red[key]).add_roles(role)
-                await (red[key]).move_to(red_channel)
-            teams_and_roles_description = await get_description(red, blue, password, role.name, captain.id)
-            embed.description = teams_and_roles_description
-            await text_channel.send(embed=embed)
-            for announcement_channel_id in config["channel_ids"]['get_attention_channel_ids']:
-                announcement_channel = get(bot.get_all_channels(), id=announcement_channel_id)
-                if announcement_channel in channel.category.channels:
-                    await get_attention(announcement_channel, role)
+            else:
+                red, blue = matchmakingObj.matchmaker(list_of_players)
+                captain = random.choice(list_of_players)
+                print('\nRed team after matchmaking: ', red)
+                print('\nBlue team after matchmaking: ', blue)
+                red_channel, blue_channel, text_channel, role, password, lobby_name = \
+                    (await asyncio.gather(create_channels(member.guild, channel)))[0]
+                await db.write_to_db(lobby_name, red, blue, captain.id)  # save the match teams and match id in db
+                embed = discord.Embed(color=random.randint(0, 0xffff), description="⏳ Matchmaking...")
+                embed.timestamp = datetime.datetime.now()
+                for key in blue:
+                    await (blue[key]).add_roles(role)
+                    await (blue[key]).move_to(blue_channel)
+                for key in red:
+                    print('\nred[key]: ', red[key])
+                    await (red[key]).add_roles(role)
+                    await (red[key]).move_to(red_channel)
+                teams_and_roles_description = await get_description(red, blue, password, role.name, captain.id)
+                embed.description = teams_and_roles_description
+                await text_channel.send(embed=embed)
+                for announcement_channel_id in config["channel_ids"]['get_attention_channel_ids']:
+                    announcement_channel = get(bot.get_all_channels(), id=announcement_channel_id)
+                    if announcement_channel in channel.category.channels:
+                        await get_attention(announcement_channel, role)
+                return
 
 
 @bot.event
@@ -318,9 +324,15 @@ async def on_voice_channel_alone(member, channel1):  # executed when 2 members a
     print('inside on_voice_channel_alone')
     if 'blue' not in channel1.name.lower() and 'red' not in channel1.name.lower():
         return
+    red = None
+    blue = None
+    captain_id = None
+    match_id = None
     for i in channel1.category.channels:
         print('inside alone for loop')
-        if i != channel1 and i.type.name == 'voice' and len(i.members) <= 2:
+        if i.type.name == 'text':
+            continue
+        elif i != channel1 and len(i.members) <= 2:
             print('inside alone for loop')
             match_id = channel1.category.name
             red, blue, captain_id = await db.get_teams(match_id)
@@ -342,16 +354,17 @@ async def on_voice_channel_alone(member, channel1):  # executed when 2 members a
             await asyncio.gather(category_to_be_deleted.delete())
             print('deleted category and removed roles')
             break
-    else:
-        return
+        else:
+            return
 
-    latest_match_stats = await Stats.get_stats(red, blue)
-    print('\nlatest_match_stats: ', latest_match_stats)
-    embed = get_stats_embed(latest_match_stats, captain_id, match_id)
-    print('Stats description: ', embed.description)
-    # send match stats to match history channels
-    for i in ['monthly_lb', 'weekly_lb', 'overall_lb', 'daily_lb']:
-        await db.write_stats(latest_match_stats, i)
+    if red and blue and captain_id and match_id:
+        latest_match_stats = await Stats.get_stats(red, blue)
+        print('\nlatest_match_stats: ', latest_match_stats)
+        embed = get_stats_embed(latest_match_stats, captain_id, match_id)
+        print('Stats description: ', embed.description)
+        # send match stats to match history channels
+        for i in ['monthly_lb', 'weekly_lb', 'overall_lb', 'daily_lb']:
+            await db.write_stats(latest_match_stats, i)
 
 
 async def removed_member_dm(member, error='no_summoner'):
