@@ -1,0 +1,5 @@
+requests~=2.26.0
+discord~=1.7.3
+schedule~=1.1.0
+riotwatcher
+psycopg2
