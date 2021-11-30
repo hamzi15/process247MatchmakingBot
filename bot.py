@@ -38,8 +38,8 @@ for i in config['channel_ids']['lobby_channel_ids']:
 
 @bot.event
 async def on_ready():
-    # if not update_cache.is_running():
-    #     update_cache.start()
+    if not update_cache.is_running():
+        update_cache.start()
     if not status_task.is_running():
         status_task.start()
     if not scheduler.is_running():
@@ -98,7 +98,7 @@ async def fetch_info(member):
                 return ans
 
 
-@tasks.loop(seconds=30)
+@tasks.loop(minutes=2.5)
 async def scheduler():
     schedule.run_pending()
 
@@ -303,7 +303,7 @@ async def on_voice_channel_connect(member, channel):
                     announcement_channel = get(bot.get_all_channels(), id=announcement_channel_id)
                     if announcement_channel in channel.category.channels:
                         await get_attention(announcement_channel, role)
-                delete_category_at = str(datetime.datetime.now() + datetime.timedelta(minutes=2)).split(' ')[1].split(
+                delete_category_at = str(datetime.datetime.now() + datetime.timedelta(minutes=80)).split(' ')[1].split(
                     ':')
                 delete_category_at = f"{delete_category_at[0]}:{delete_category_at[1]}"
                 schedule.every().day.at(delete_category_at) \
