@@ -459,25 +459,24 @@ def get_stats_embed(stats, captain_id, match_id):
 
 
 async def get_description(red, blue, password, match_name, captain_id):
-    # description = f"**⚔️Teams and Roles**\n\n" \
-    #               f"**Lobby Name:**     {match_name}\n" \
-    #               f"**Password:**       {password}\n\n" \
-    #               f"**Captain:** <@!{captain_id}>\n\n" \
-    #               f"**🔵 Blue Team: **\n" \
-    #               f"   **Top     -** <@!{blue['top'].id}>\n" \
-    #               f"   **Jungle  -** <@!{blue['jungle'].id}>\n" \
-    #               f"   **Mid     -** <@!{blue['mid'].id}>\n" \
-    #               f"   **ADC     -** <@!{blue['adc'].id}>\n" \
-    #               f"   **Support -** <@!{blue['support'].id}>\n\n" \
-    #               f"**🔴 Red Team: **\n" \
-    #               f"   **Top     -** <@!{red['top'].id}>\n" \
-    #               f"   **Jungle  -** <@!{red['jungle'].id}>\n" \
-    #               f"   **Mid     -** <@!{red['mid'].id}>\n" \
-    #               f"   **ADC     -** <@!{red['adc'].id}>\n" \
-    #               f"   **Support -** <@!{red['support'].id}>\n\n\n" \
-    #               f"*<@!{captain_id}> You are incharge of creating the lobby, please use the above `Lobby Name` and " \
-    #               f"`Password`.* "
-    description = "hello"
+    description = f"**⚔️Teams and Roles**\n\n" \
+                  f"**Lobby Name:**     {match_name}\n" \
+                  f"**Password:**       {password}\n\n" \
+                  f"**Captain:** <@!{captain_id}>\n\n" \
+                  f"**🔵 Blue Team: **\n" \
+                  f"   **Top     -** <@!{blue['top'].id}>\n" \
+                  f"   **Jungle  -** <@!{blue['jungle'].id}>\n" \
+                  f"   **Mid     -** <@!{blue['mid'].id}>\n" \
+                  f"   **ADC     -** <@!{blue['adc'].id}>\n" \
+                  f"   **Support -** <@!{blue['support'].id}>\n\n" \
+                  f"**🔴 Red Team: **\n" \
+                  f"   **Top     -** <@!{red['top'].id}>\n" \
+                  f"   **Jungle  -** <@!{red['jungle'].id}>\n" \
+                  f"   **Mid     -** <@!{red['mid'].id}>\n" \
+                  f"   **ADC     -** <@!{red['adc'].id}>\n" \
+                  f"   **Support -** <@!{red['support'].id}>\n\n\n" \
+                  f"*<@!{captain_id}> You are incharge of creating the lobby, please use the above `Lobby Name` and " \
+                  f"`Password`.* "
     return description
 
 
