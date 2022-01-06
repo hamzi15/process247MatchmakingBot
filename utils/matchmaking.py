@@ -154,8 +154,8 @@ class MatchMaking:
     @staticmethod
     def player_valuation(tier, rank, wins, loses, lp):
         totalMatches = wins + loses
-        if totalMatches < 50:
-            return False
+        #if totalMatches < 50:
+        #    return False
         WinRate = (wins / totalMatches) * 100  # Percentage winrate
         mmr = int
         print('inside rank_value')
